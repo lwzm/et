@@ -13,11 +13,11 @@ import xlrd
 from pprint import pprint
 
 dump_sorted = functools.partial(json.dumps, ensure_ascii=False,
-                          separators = (",", ": "),
-                          sort_keys=True, indent=4)
+                                separators = (",", ": "),
+                                sort_keys=True, indent=4)
 
 dump_raw = functools.partial(json.dumps, ensure_ascii=False,
-                          separators = (",", ": "), indent=4)
+                             separators = (",", ": "), indent=4)
 
 
 # global progress status
@@ -27,7 +27,7 @@ progress = {
     "row": None,
     "column": None,
     "title": None,
-    "error": "",
+    "error": None,
 }
 
 def main(xls_file):
@@ -69,20 +69,46 @@ def get_notes(xls):
             all_notes[head_note.author] = notes
     return all_notes
 
-cell_type = {
-    xlrd.XL_CELL_TEXT: str,
-    xlrd.XL_CELL_NUMBER: float,
-    xlrd.XL_CELL_DATE: float,
+
+
+def bb_list(s):
+    return eval("[%s]" % s)
+
+bb_types = {
+    "list": bb_list,
 }
 
+strip = lambda s: s.strip()
 
-def note_text_to_attrs(s):
-    """TODO"""
-    return s
+def note_text_to_attr(text):
+    """type, test, ...
+    type: int, float, str, bool, list, time, reward, require, ...
+    test: any python statement
+    ...
+    """
+    attr = {}
+    for line in filter(None, map(strip, text.split("\n"))):
+        token = line.split(":", 1)
+        if len(token) != 2:
+            continue
+        k, v = map(strip, token)
+        if k == "type":
+            attr["type"] = eval(v, None, bb_types)
+        elif k == "test":
+            attr["test"] = compile(v, v, "eval")
+
+    return attr
 
 def get_custom_attrs(sheet):
+    """cells' custom attrubutes
+    range will be used: row 2 - end
+    """
     cell_note_map = sheet.cell_note_map
-    return {}
+    o = {}
+    for k, v in cell_note_map.items():
+        o[k] = note_text_to_attr(v.text)
+    return o
+
 
 def get_keys_attrs(sheet):
     """keys and attrs
@@ -96,44 +122,50 @@ def get_keys_attrs(sheet):
 
     attrs = []
     cell_note_map = sheet.cell_note_map
-    for i in range(len(keys)):
-        progress["column"] = xlrd.colname(i)
-        note = cell_note_map.get((0, i))
+    for colx in range(len(keys)):
+        progress["column"] = xlrd.colname(colx)
+        note = cell_note_map.get((0, colx))
         if note:
-            attrs.append(note_text_to_attrs(note.text)) #dummy
+            attrs.append(note_text_to_attr(note.text))
         else:
             attrs.append(None)
 
     return keys, attrs
 
-def apply_attrs(values, attrs):
+
+def apply_attrs(values, attrs, custom_attrs, rowx):
     """convert and check cell.value
     if error occurs, set progress["error"] and break
     """
-    expr = "x != 22"
-    dummy_attr = {"type": int, "test": compile(expr, expr, "eval")}
+    expr = "x != 212"
     o = []
-    col = 0
+    colx = 0
+    #print(custom_attrs)
     for x, attr in zip(values, attrs):
-        attr = dummy_attr #dummy
-        progress["column"] = xlrd.colname(col)
-        col += 1
-        #
-        _type = attr.get("type")
-        if _type:
-            try:
-                x = _type(x)
-            except Exception as e:
-                progress["error"] = "type %r error: %s, %s" \
-                                    % (_type, type(e).__name__, e)
+        custom_attr = custom_attrs.get((rowx, colx))
+        #print(custom_attr)
+        if custom_attr:
+            attr = custom_attr
+        progress["column"] = xlrd.colname(colx)
+        colx += 1
+
+        if attr:
+            #
+            _type = attr.get("type")
+            if _type:
+                try:
+                    x = _type(x)
+                except Exception as e:
+                    progress["error"] = "type error: %s, %s" \
+                                        % (type(e).__name__, e)
+                    break
+            #
+            _test = attr.get("test")
+            if _test and not eval(_test):
+                progress["error"] = "test %r faild: x is %r" \
+                                    % (_test.co_filename, x)
                 break
-        #
-        _test = attr.get("test")
-        if _test and not eval(_test):
-            progress["error"] = "test %r faild: x is %r" \
-                                % ( _test.co_filename, x)
-            break
-        #
+            #
         o.append(x)
     else:   # all is well
         return o
@@ -146,9 +178,9 @@ def combine(keys, attrs, rows_values, custom_attrs):
     pprint(rows_values)
     """
     o = []
-    for row, values in enumerate(rows_values, 2):
-        progress["row"] = row
-        v = apply_attrs(values, attrs)
+    for rowx, values in enumerate(rows_values, 1):
+        progress["row"] = rowx
+        v = apply_attrs(values, attrs, custom_attrs, rowx)
         if not v:
             pprint(progress)
             break
@@ -157,17 +189,20 @@ def combine(keys, attrs, rows_values, custom_attrs):
     else:
         return o
 
-def filter_int(x):
-    if isinstance(x, float) and x.is_integer():
-        return int(x)
-    else:
-        return x
+def filter_cell(type, value, datemode=0):
+    if type == xlrd.XL_CELL_NUMBER and value.is_integer():
+        value = int(value)
+    elif type == xlrd.XL_CELL_DATE:
+        value = xlrd.xldate_as_tuple(value, datemode)
+    elif type == xlrd.XL_CELL_BOOLEAN:
+        value = bool(value)
+    return value
 
 def parse_sheet(sheet):
     keys, attrs = get_keys_attrs(sheet)
     custom_attrs = get_custom_attrs(sheet)
-    rows_values = [list(map(filter_int, sheet.row_values(i)))
-              for i in range(1, sheet.nrows)]
+    rows_values = [list(map(filter_cell, sheet.row_types(i), sheet.row_values(i)))
+                   for i in range(1, sheet.nrows)]
     return combine(keys, attrs, rows_values, custom_attrs)
 
 def parse(xls, db):
