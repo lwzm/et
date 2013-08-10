@@ -20,6 +20,16 @@ dump_raw = functools.partial(json.dumps, ensure_ascii=False,
                           separators = (",", ": "), indent=4)
 
 
+# global progress status
+progress = {
+    "xls": None,
+    "sheet": None,
+    "row": None,
+    "column": None,
+    "title": None,
+    "error": "",
+}
+
 def main(xls_file):
     for k, v in get_values(xls_file).items():
         print("%s:" % k, dump_raw(v))
@@ -70,18 +80,24 @@ def note_text_to_attrs(s):
     """TODO"""
     return s
 
+def get_custom_attrs(sheet):
+    cell_note_map = sheet.cell_note_map
+    return {}
+
 def get_keys_attrs(sheet):
     """keys and attrs
     keys come from row 1, a normal string is ok
     attrs live with these keys, note text
     """
+    progress["row"] = 1
     keys = list(itertools.takewhile(lambda x: isinstance(x, str) and x,
                                     sheet.row_values(0)))
-    assert keys, keys
+    assert keys, progress
 
     attrs = []
     cell_note_map = sheet.cell_note_map
     for i in range(len(keys)):
+        progress["column"] = xlrd.colname(i)
         note = cell_note_map.get((0, i))
         if note:
             attrs.append(note_text_to_attrs(note.text)) #dummy
@@ -91,30 +107,55 @@ def get_keys_attrs(sheet):
     return keys, attrs
 
 def apply_attrs(values, attrs):
-    """TODO"""
-    out = []
+    """convert and check cell.value
+    if error occurs, set progress["error"] and break
+    """
+    expr = "x != 22"
+    dummy_attr = {"type": int, "test": compile(expr, expr, "eval")}
+    o = []
+    col = 0
     for x, attr in zip(values, attrs):
-        attr = {"type": int, "test": compile("x < 30", "test", "eval")} #dummy
-        type = attr.get("type")
-        if type:
-            x = type(x)
-        test = attr.get("test")
-        if test and not eval(test):
-            print("err")
-        out.append(x)
-    return out
+        attr = dummy_attr #dummy
+        progress["column"] = xlrd.colname(col)
+        col += 1
+        #
+        _type = attr.get("type")
+        if _type:
+            try:
+                x = _type(x)
+            except Exception as e:
+                progress["error"] = "type %r error: %s, %s" \
+                                    % (_type, type(e).__name__, e)
+                break
+        #
+        _test = attr.get("test")
+        if _test and not eval(_test):
+            progress["error"] = "test %r faild: x is %r" \
+                                % ( _test.co_filename, x)
+            break
+        #
+        o.append(x)
+    else:   # all is well
+        return o
 
 
-def combine(keys, attrs, values):
+def combine(keys, attrs, rows_values, custom_attrs):
+    """
     pprint(keys)
     pprint(attrs)
-    pprint(values)
-    rows = []
-    for raw in values:
-        v = apply_attrs(raw, attrs)
-        row = collections.OrderedDict(zip(keys, v))
-        rows.append(row)
-    pprint(rows)
+    pprint(rows_values)
+    """
+    o = []
+    for row, values in enumerate(rows_values, 2):
+        progress["row"] = row
+        v = apply_attrs(values, attrs)
+        if not v:
+            pprint(progress)
+            break
+        od = collections.OrderedDict(zip(keys, v))
+        o.append(od)
+    else:
+        return o
 
 def filter_int(x):
     if isinstance(x, float) and x.is_integer():
@@ -124,19 +165,28 @@ def filter_int(x):
 
 def parse_sheet(sheet):
     keys, attrs = get_keys_attrs(sheet)
-    values = [list(map(filter_int, sheet.row_values(i)))
+    custom_attrs = get_custom_attrs(sheet)
+    rows_values = [list(map(filter_int, sheet.row_values(i)))
               for i in range(1, sheet.nrows)]
-    combine(keys, attrs, values)
+    return combine(keys, attrs, rows_values, custom_attrs)
 
 def parse(xls, db):
-    wb = xlrd.open_workbook(xls)
-    for s in wb.sheets():
-        cell_note_map = s.cell_note_map
+    workbook = xlrd.open_workbook(xls)
+    progress["xls"] = xls
+    for sheet in workbook.sheets():
+        cell_note_map = sheet.cell_note_map
         head_note = cell_note_map.get((0, 0))
         if head_note:
+            progress["sheet"] = sheet.name
             title = head_note.author
             if title:
-                db[title] = parse_sheet(s)
+                progress["title"] = title
+                s = parse_sheet(sheet)
+                pprint(s)
+                if s:
+                    db[title] = s
+                else:
+                    break
 
 
 
