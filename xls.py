@@ -169,7 +169,9 @@ def apply_attrs(values, attrs, custom_attrs, rowx):
         custom_attr = custom_attrs.get((rowx, colx))
         #print(custom_attr)
         if custom_attr:
-            attr = custom_attr
+            attr = attr.copy()
+            attr.update(attr)
+            attr.update(custom_attr)
         progress["column"] = xlrd.colname(colx)
         colx += 1
 
