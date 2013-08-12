@@ -196,6 +196,8 @@ def filter_cell(type, value, datemode=0):
         value = xlrd.xldate_as_tuple(value, datemode)
     elif type == xlrd.XL_CELL_BOOLEAN:
         value = bool(value)
+    else:
+        value = value.strip()
     return value
 
 def parse_sheet(sheet):
