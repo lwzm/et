@@ -98,9 +98,25 @@ def bb_dict(raw):
     values = map(bb_key_value, raw.split("\n"))
     return eval("{%s}" % ', '.join(values))
 
+def bb_time(raw):
+    """
+    """
+    assert isinstance(raw, tuple), raw
+    assert len(raw) == 6, raw
+    return raw
+
+def bb_reward(raw):
+    """see bb.xls"""
+
+def bb_require(raw):
+    """see bb.xls"""
+
 bb_types = {
     "list": bb_list,
     "dict": bb_dict,
+    "time": bb_time,
+    "reward": bb_reward,
+    "require": bb_require,
 }
 
 
