@@ -70,15 +70,42 @@ def get_notes(xls):
     return all_notes
 
 
+strip = lambda s: s.strip()
 
-def bb_list(s):
-    return eval("[%s]" % s)
+# quote a string, unless this thing could be a number
+quoted = lambda s: s if s.isdigit() else repr(s)
+# or:
+def quoted(s):
+    """accept float format as a `number`"""
+    try:
+        float(s)
+    except ValueError:
+        s = repr(s)
+    return s
+
+def bb_list(raw):
+    """accept ONLY spliter comma(",")
+    """
+    if not isinstance(raw, str):
+        raw = str(raw)
+    values = map(quoted, map(strip, raw.split(",")))
+    return eval("[%s]" % ', '.join(values))
+
+def bb_key_value(raw):
+    k, v = map(quoted, map(strip, raw.split(":")))
+    return "%s: %s" % (k, v)
+
+def bb_dict(raw):
+    """accept ONLY spliter CR("\n")
+    """
+    values = map(bb_key_value, raw.split("\n"))
+    return eval("{%s}" % ', '.join(values))
 
 bb_types = {
     "list": bb_list,
+    "dict": bb_dict,
 }
 
-strip = lambda s: s.strip()
 
 def note_text_to_attr(text):
     """type, test, ...
