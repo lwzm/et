@@ -22,12 +22,12 @@ dump_raw = functools.partial(json.dumps, ensure_ascii=False,
 
 # global progress status
 progress = {
-    "xls": None,
-    "sheet": None,
-    "row": None,
-    "column": None,
-    "title": None,
-    "error": None,
+    #"xls": None,
+    #"sheet": None,
+    #"row": None,
+    #"column": None,
+    #"title": None,
+    #"error": None,
 }
 
 def main(xls_file):
@@ -72,11 +72,8 @@ def get_notes(xls):
 
 strip = lambda s: s.strip()
 
-# quote a string, unless this thing could be a number
-quoted = lambda s: s if s.isdigit() else repr(s)
-# or:
 def quoted(s):
-    """accept float format as a `number`"""
+    """quote a string, unless this thing could be a number"""
     try:
         float(s)
     except ValueError:
@@ -236,6 +233,7 @@ def parse_sheet(sheet):
 
 def parse(xls, db):
     workbook = xlrd.open_workbook(xls)
+    progress.clear()
     progress["xls"] = xls
     for sheet in workbook.sheets():
         cell_note_map = sheet.cell_note_map
