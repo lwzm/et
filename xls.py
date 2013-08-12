@@ -161,13 +161,10 @@ def apply_attrs(values, attrs, custom_attrs, rowx):
     """convert and check cell.value
     if error occurs, set progress["error"] and break
     """
-    expr = "x != 212"
     o = []
     colx = 0
-    #print(custom_attrs)
     for x, attr in zip(values, attrs):
         custom_attr = custom_attrs.get((rowx, colx))
-        #print(custom_attr)
         if custom_attr:
             attr = attr.copy()
             attr.update(custom_attr)
@@ -186,10 +183,16 @@ def apply_attrs(values, attrs, custom_attrs, rowx):
                     break
             #
             _test = attr.get("test")
-            if _test and not eval(_test):
-                progress["error"] = "test %r faild: x is %r" \
-                                    % (_test.co_filename, x)
-                break
+            if _test:
+                try:
+                    if not eval(_test):
+                        progress["error"] = "test %r faild: x is %r" \
+                                            % (_test.co_filename, x)
+                        break
+                except Exception as e:
+                    progress["error"] = "test error: type error: %s, %s" \
+                                        % (type(e).__name__, e)
+                    break
             #
         o.append(x)
     else:   # all is well
