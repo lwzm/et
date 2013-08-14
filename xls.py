@@ -5,12 +5,14 @@ import collections
 import functools
 import itertools
 import json
+import re
 import shelve
 import sys
 
 import xlrd
 
 from pprint import pprint
+pprint = functools.partial(pprint, width=40)
 
 dump_sorted = functools.partial(json.dumps, ensure_ascii=False,
                                 separators = (",", ": "),
@@ -72,6 +74,8 @@ def get_notes(xls):
 
 strip = lambda s: s.strip()
 
+try_int = lambda s: int(s) if s.isdigit() else s
+
 def quoted(s):
     """quote a string, unless this thing could be a number"""
     try:
@@ -99,17 +103,57 @@ def bb_dict(raw):
     return eval("{%s}" % ', '.join(values))
 
 def bb_time(raw):
-    """
-    """
+    """use value returned by xldate_as_tuple() directly"""
     assert isinstance(raw, tuple), raw
     assert len(raw) == 6, raw
     return raw
 
+rc_key = re.compile(r"([a-z]+)(\d*)")
+
 def bb_reward(raw):
     """see bb.xls"""
+    units = map(strip, raw.split())
+    rcs = []   # for all rewards
+    w0 = []    # for weight rewards, one `weight loop`, rc
+    w1 = []    # for weight rewards, one `weight loop`, weight
+
+    for unit in units:
+        rc = []
+        flush = True
+        keys = unit.split(":")
+        assert keys[0][1].isalpha(), keys[0]
+
+        rc1, rc2 = rc_key.match(keys[0]).groups()
+        rc3 = keys[1]
+
+        rc.append(rc1)
+        if rc2:
+            rc.append(int(rc2))
+        rc.append(int(rc3) if rc3.isdigit() else rc3)
+
+        if len(keys) > 2:
+            rc4 = keys[2]
+            if rc4[-1] == "%":
+                rc = [rc, float(rc4[:-1]) / 100]
+            else:
+                w0.append(rc)
+                w1.append(float(rc4) if "." in rc4 else int(rc4))
+                flush = False
+        if flush:
+            if w0 and w1:
+                rcs.append([w0[:], w1[:]])
+                del w0[:], w1[:]
+            rcs.append(rc)
+
+    if w0 and w1:   # flush tail
+        rcs.append([w0, w1])
+
+    return rcs
+
 
 def bb_require(raw):
     """see bb.xls"""
+    return raw
 
 bb_types = {
     "list": bb_list,
@@ -118,6 +162,11 @@ bb_types = {
     "reward": bb_reward,
     "require": bb_require,
 }
+
+def list_to_tuple(v):
+    if isinstance(v, (list, tuple)):
+        v = tuple(list_to_tuple(i) for i in v)
+    return v
 
 
 def note_text_to_attr(text):
@@ -268,7 +317,9 @@ def parse(xls, db):
                 if s:
                     db[title] = s
                 else:
-                    break
+                    print("beiju:")
+                    pprint(progress)
+                    continue
 
 
 
