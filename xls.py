@@ -146,7 +146,8 @@ def bb_reward(raw):
             rcs.append(rc)
 
     if w0 and w1:   # flush tail
-        rcs.append([w0, w1])
+        rcs.append([w0[:], w1[:]])
+        del w0[:], w1[:]
 
     return rcs
 
