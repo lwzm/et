@@ -113,48 +113,62 @@ rc_key = re.compile(r"([a-z]+)(\d*)")
 def bb_reward(raw):
     """see bb.xls"""
     units = map(strip, raw.split())
-    rcs = []   # for all rewards
-    w0 = []    # for weight rewards, one `weight loop`, rc
+    rws = []   # for all rewards
+    w0 = []    # for weight rewards, one `weight loop`, reward
     w1 = []    # for weight rewards, one `weight loop`, weight
 
-    for unit in units:
-        rc = []
+    for i in units:
+        rw = []
         flush = True
-        keys = unit.split(":")
-        assert keys[0][1].isalpha(), keys[0]
+        keys = i.split(":")
+        assert keys[0][0].isalpha(), keys[0]
 
-        rc1, rc2 = rc_key.match(keys[0]).groups()
-        rc3 = keys[1]
+        i1, i2 = rc_key.match(keys[0]).groups()
+        i3 = keys[1]
 
-        rc.append(rc1)
-        if rc2:
-            rc.append(int(rc2))
-        rc.append(int(rc3) if rc3.isdigit() else rc3)
+        rw.append(i1)
+        if i2:
+            rw.append(int(i2))
+        rw.append(int(i3) if i3.isdigit() else i3)
 
         if len(keys) > 2:
-            rc4 = keys[2]
-            if rc4[-1] == "%":
-                rc = [rc, float(rc4[:-1]) / 100]
+            i4 = keys[2]
+            if i4[-1] == "%":
+                rw = [rw, float(i4[:-1]) / 100]
             else:
-                w0.append(rc)
-                w1.append(float(rc4) if "." in rc4 else int(rc4))
+                w0.append(rw)
+                w1.append(float(i4) if "." in i4 else int(i4))
                 flush = False
         if flush:
             if w0 and w1:
-                rcs.append([w0[:], w1[:]])
+                rws.append([w0[:], w1[:]])
                 del w0[:], w1[:]
-            rcs.append(rc)
+            rws.append(rw)
 
     if w0 and w1:   # flush tail
-        rcs.append([w0[:], w1[:]])
+        rws.append([w0[:], w1[:]])
         del w0[:], w1[:]
 
-    return rcs
+    return rws
 
 
 def bb_require(raw):
     """see bb.xls"""
-    return raw
+    rq = raw.split(":")
+    l = len(rq)
+    assert rq[0][0].isalpha(), "invalid `%s`" % (rq[0],)
+    assert l == 2 or l == 3, "length must be 2 or 3" % (rq,)
+    n = rq[1].strip()
+    if n.isdigit():   # L:N[:R]
+        rq[1] = int(n)
+        if l == 3:
+            compile(rq[2], "", "eval")   # try to compile it
+    else:   # L:E[:N]
+        compile(n, "", "eval")
+        if l == 3:
+            rq[2] = int(rq[2])
+    return rq
+
 
 bb_types = {
     "list": bb_list,
