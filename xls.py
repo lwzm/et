@@ -112,7 +112,7 @@ rc_key = re.compile(r"([a-z]+)(\d*)")
 
 def bb_reward(raw):
     """see bb.xls"""
-    units = map(strip, raw.split())
+    units = raw.split()
     rws = []   # for all rewards
     w0 = []    # for weight rewards, one `weight loop`, reward
     w1 = []    # for weight rewards, one `weight loop`, weight
@@ -129,7 +129,11 @@ def bb_reward(raw):
         rw.append(i1)
         if i2:
             rw.append(int(i2))
-        rw.append(int(i3) if i3.isdigit() else i3)
+        if i3.isdigit():
+            i3 = int(i3)
+        else:
+            compile(i3, "just test", "eval")
+        rw.append(i3)
 
         if len(keys) > 2:
             i4 = keys[2]
@@ -162,9 +166,9 @@ def bb_require(raw):
     if n.isdigit():   # L:N[:R]
         rq[1] = int(n)
         if l == 3:
-            compile(rq[2], "", "eval")   # try to compile it
+            compile(rq[2], "just test", "eval")
     else:   # L:E[:N]
-        compile(n, "", "eval")
+        compile(n, "just test", "eval")
         if l == 3:
             rq[2] = int(rq[2])
     return rq
@@ -287,7 +291,7 @@ def combine(keys, attrs, rows_values, custom_attrs):
     """
     o = []
     for rowx, values in enumerate(rows_values, 1):
-        progress["row"] = rowx
+        progress["row"] = rowx + 1   # human readable
         v = apply_attrs(values, attrs, custom_attrs, rowx)
         if not v:
             pprint(progress)
@@ -343,4 +347,5 @@ if __name__ == "__main__":
     #main(sys.argv[1])
     db = shelve.open("bb")
     parse(sys.argv[1], db)
+    #pprint(list(db.values()))
     db.close()
