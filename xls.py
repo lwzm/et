@@ -12,7 +12,7 @@ import sys
 import xlrd
 
 from pprint import pprint
-pprint = functools.partial(pprint, width=40)
+#pprint = functools.partial(pprint, width=40)
 
 dump_sorted = functools.partial(json.dumps, ensure_ascii=False,
                                 separators = (",", ": "),
@@ -32,7 +32,7 @@ progress = {
     #"error": None,
 }
 
-def main(xls_file):
+def view(xls_file):
     for k, v in get_values(xls_file).items():
         print("%s:" % k, dump_raw(v))
 
@@ -296,8 +296,8 @@ def combine(keys, attrs, rows_values, custom_attrs):
         if not v:
             pprint(progress)
             break
-        od = collections.OrderedDict(zip(keys, v))
-        o.append(od)
+        #od = collections.OrderedDict(zip(keys, v))
+        o.append(dict(zip(keys, v)))
     else:
         return o
 
@@ -332,7 +332,7 @@ def parse(xls, db):
             if title:
                 progress["title"] = title
                 s = parse_sheet(sheet)
-                pprint(s)
+                #pprint(s)
                 if s:
                     db[title] = s
                 else:
@@ -344,8 +344,9 @@ def parse(xls, db):
 
 if __name__ == "__main__":
     sys.argv.append("b.xls")
-    #main(sys.argv[1])
+    xls = sys.argv[1]
+    view(xls)
     db = shelve.open("bb")
-    parse(sys.argv[1], db)
+    parse(xls, db)
     #pprint(list(db.values()))
     db.close()
