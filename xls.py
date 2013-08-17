@@ -36,6 +36,8 @@ def view(xls_file):
     for k, v in get_values(xls_file).items():
         print("%s:" % k, dump_raw(v))
 
+    print()
+
     for k, v in get_notes(xls_file).items():
         print("%s:" % k, dump_sorted(v))
 
