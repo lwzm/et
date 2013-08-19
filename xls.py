@@ -32,6 +32,10 @@ progress = {
     #"error": None,
 }
 
+workbook_mtime_map = {}
+title_workbooks_map = collections.defaultdict(set)
+db_cache = collections.defaultdict(list)
+
 def view(xls_file):
     for k, v in get_values(xls_file).items():
         print("%s:" % k, dump_raw(v))
@@ -321,7 +325,7 @@ def parse_sheet(sheet):
                    for i in range(1, sheet.nrows)]
     return combine(keys, attrs, rows_values, custom_attrs)
 
-def parse(xls, db):
+def parse(xls):
     workbook = xlrd.open_workbook(xls)
     progress.clear()
     progress["xls"] = xls
@@ -333,10 +337,11 @@ def parse(xls, db):
             title = head_note.author
             if title:
                 progress["title"] = title
+                title_workbooks_map[title].add(xls)
                 s = parse_sheet(sheet)
                 #pprint(s)
                 if s:
-                    db[title] = s
+                    db_cache[title].extend(s)
                 else:
                     print("beiju:")
                     pprint(progress)
@@ -347,8 +352,23 @@ def parse(xls, db):
 if __name__ == "__main__":
     sys.argv.append("b.xls")
     xls = sys.argv[1]
-    view(xls)
+    #view(xls)
     db = shelve.open("bb")
-    parse(xls, db)
+    #print(list(db.keys()))
+    #print(list(db.values()))
+    #quit()
+
+    # loading...
+    title_workbooks_map.update(db.get("title_workbooks_map") or {})
+
+    # parsing...
+    parse(xls)
+    #parse(xls2)
+    #parse(xls3)
+    #...
+
     #pprint(list(db.values()))
+    db.update(db_cache)
+    db["title_workbooks_map"] = title_workbooks_map
     db.close()
+    pprint(title_workbooks_map)
