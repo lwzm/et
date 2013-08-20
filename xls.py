@@ -32,6 +32,11 @@ progress = {
     #"error": None,
 }
 
+uniq_tasks = collections.defaultdict(list)
+sort_tasks = collections.defaultdict(list)
+ref_file_tasks = collections.defaultdict(set)
+ref_cell_tasks = collections.defaultdict(set)
+
 workbook_mtime_map = {}
 title_workbooks_map = collections.defaultdict(set)
 db_cache = collections.defaultdict(list)
@@ -44,7 +49,6 @@ def view(xls_file):
 
     for k, v in get_notes(xls_file).items():
         print("%s:" % k, dump_sorted(v))
-
 
 def get_values(xls):
     """for hp"""
@@ -63,7 +67,6 @@ def get_values(xls):
                     rows.append(s.cell(row, col).value)
     return workbook
 
-
 def get_notes(xls):
     """for me"""
     wb = xlrd.open_workbook(xls)
@@ -76,6 +79,7 @@ def get_notes(xls):
             notes["@"] = "%s -> %s" % (xls, s.name)
             all_notes[head_note.author] = notes
     return all_notes
+
 
 
 strip = lambda s: s.strip()
@@ -210,7 +214,12 @@ def note_text_to_attr(text):
             attr["type"] = eval(v, None, bb_types)
         elif k == "test":
             attr["test"] = compile(v, v, "eval")
-
+        elif k == "ref":
+            attr["ref"] = v
+        elif k == "uniq":
+            attr["uniq"] = True
+        elif k == "sort":
+            attr["sort"] = True
     return attr
 
 def get_custom_attrs(sheet):
@@ -258,8 +267,11 @@ def apply_attrs(values, attrs, custom_attrs, rowx):
         if custom_attr:
             attr = attr.copy()
             attr.update(custom_attr)
-        progress["column"] = xlrd.colname(colx)
-        colx += 1
+
+        colname = xlrd.colname(colx)
+        progress["column"] = colname
+        abs_colname = "%s -> %s -> %s" \
+                      % (progress["xls"], progress["sheet"], colname)
 
         if attr:
             #
@@ -284,7 +296,23 @@ def apply_attrs(values, attrs, custom_attrs, rowx):
                                         % (type(e).__name__, e)
                     break
             #
+            _uniq = attr.get("uniq")
+            if _uniq:
+                uniq_tasks[abs_colname].append(x)
+            #
+            _sort = attr.get("sort")
+            if _sort:
+                sort_tasks[abs_colname].append(x)
+            #
+            _ref = attr.get("ref")
+            if _ref:
+                if "/" in _ref:
+                    ref_file_tasks[_ref].add(x)
+                else:
+                    ref_cell_tasks[_ref].add(x)
+
         o.append(x)
+        colx += 1
     else:   # all is well
         return o
 
@@ -372,3 +400,7 @@ if __name__ == "__main__":
     db["title_workbooks_map"] = title_workbooks_map
     db.close()
     pprint(title_workbooks_map)
+    pprint(uniq_tasks)
+    pprint(sort_tasks)
+    pprint(ref_file_tasks)
+    pprint(ref_cell_tasks)
