@@ -40,7 +40,7 @@ ref_file_tasks = collections.defaultdict(list)
 ref_cell_tasks = collections.defaultdict(list)
 
 workbooks_mtimes = collections.Counter()
-title_workbooks_map = collections.defaultdict(set)
+title_workbook_sheet = collections.defaultdict(list)
 db_cache = collections.defaultdict(list)
 
 
@@ -85,7 +85,13 @@ def get_notes(xls):
 
 
 def check(db, prefix=""):
-    """check uniq_tasks sort_tasks"""
+    """check
+    uniq_tasks
+    sort_tasks
+    ref_file_tasks
+    ref_cell_tasks
+    title_workbook_sheet
+    """
     for pos, lst in uniq_tasks.items():
         if len(frozenset(lst)) != len(lst):
             print("unique is false:", pos)
@@ -103,6 +109,11 @@ def check(db, prefix=""):
         for v, pos in cells:
             if v not in vs:
                 print("%s: %s is not in %s" % (pos, v, expr))
+    for k, v in title_workbook_sheet.items():
+        if len([xls for xls, sheet in v]) != 1:
+            print("title %s must be distributed over sheets in ONE xls" \
+                  % (k,))
+
 
 
 
@@ -382,7 +393,7 @@ def parse_sheet(sheet):
 def parse(xls):
     mtime = os.stat(xls).st_mtime
     if mtime == workbooks_mtimes[xls]:
-        print("pass")
+        print("pass %s" % xls)
         return
     workbooks_mtimes[xls] = mtime
     workbook = xlrd.open_workbook(xls)
@@ -396,7 +407,7 @@ def parse(xls):
             title = head_note.author
             if title:
                 progress["title"] = title
-                title_workbooks_map[title].add(xls)
+                title_workbook_sheet[title].append([xls, sheet.name])
                 s = parse_sheet(sheet)
                 #pprint(s)
                 if s:
@@ -418,8 +429,8 @@ if __name__ == "__main__":
     #quit()
 
     # loading...
-    title_workbooks_map.update(db.get("title_workbooks_map") or {})
-    workbooks_mtimes.update(db.get("workbooks_mtimes") or {})
+    title_workbook_sheet.update(db.get("_title_workbook_sheet") or {})
+    workbooks_mtimes.update(db.get("_workbooks_mtimes") or {})
 
     # parsing...
     parse(xls)
@@ -430,14 +441,14 @@ if __name__ == "__main__":
     #pprint(list(db.values()))
     # persisting usable infos
     db.update(db_cache)
-    db["title_workbooks_map"] = title_workbooks_map
-    db["workbooks_mtimes"] = workbooks_mtimes
+    db["_title_workbook_sheet"] = title_workbook_sheet
+    db["_workbooks_mtimes"] = workbooks_mtimes
 
     check(db, "..")
 
     db.close()
 
-    #pprint(dict(title_workbooks_map))
+    pprint(dict(title_workbook_sheet))
     #pprint(dict(uniq_tasks))
     #pprint(dict(sort_tasks))
     #pprint(dict(ref_file_tasks))
