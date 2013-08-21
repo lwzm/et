@@ -5,9 +5,11 @@ import collections
 import functools
 import itertools
 import json
+import os
 import re
 import shelve
 import sys
+import time
 
 import xlrd
 
@@ -37,7 +39,7 @@ sort_tasks = collections.defaultdict(list)
 ref_file_tasks = collections.defaultdict(list)
 ref_cell_tasks = collections.defaultdict(list)
 
-workbook_mtime_map = {}
+workbooks_mtimes = {}
 title_workbooks_map = collections.defaultdict(set)
 db_cache = collections.defaultdict(list)
 
@@ -272,9 +274,6 @@ def apply_attrs(values, attrs, custom_attrs, rowx):
         progress["column"] = colname
         abs_colname = "%s -> %s -> %s" \
                       % (progress["xls"], progress["sheet"], colname)
-        abs_cellname = "%s -> %s -> %s" \
-                       % (progress["xls"], progress["sheet"],
-                          xlrd.cellname(rowx, colx))
 
         if attr:
             #
@@ -309,6 +308,9 @@ def apply_attrs(values, attrs, custom_attrs, rowx):
             #
             _ref = attr.get("ref")
             if _ref:
+                abs_cellname = "%s -> %s -> %s" \
+                               % (progress["xls"], progress["sheet"],
+                                  xlrd.cellname(rowx, colx))
                 if "/" in _ref:
                     ref_file_tasks[_ref].append([x, abs_cellname])
                 else:
@@ -357,6 +359,11 @@ def parse_sheet(sheet):
     return combine(keys, attrs, rows_values, custom_attrs)
 
 def parse(xls):
+    mtime = os.stat(xls).st_mtime
+    if mtime == workbooks_mtimes[xls]:
+        print("pass")
+        return
+    workbooks_mtimes[xls] = mtime
     workbook = xlrd.open_workbook(xls)
     progress.clear()
     progress["xls"] = xls
@@ -391,6 +398,7 @@ if __name__ == "__main__":
 
     # loading...
     title_workbooks_map.update(db.get("title_workbooks_map") or {})
+    workbooks_mtimes.update(db.get("workbooks_mtimes") or {})
 
     # parsing...
     parse(xls)
@@ -401,9 +409,12 @@ if __name__ == "__main__":
     #pprint(list(db.values()))
     db.update(db_cache)
     db["title_workbooks_map"] = title_workbooks_map
+    db["workbooks_mtimes"] = workbooks_mtimes
     db.close()
-    pprint(title_workbooks_map)
-    pprint(uniq_tasks)
-    pprint(sort_tasks)
-    pprint(ref_file_tasks)
-    pprint(ref_cell_tasks)
+    pprint(dict(title_workbooks_map))
+    pprint(dict(uniq_tasks))
+    pprint(dict(sort_tasks))
+    pprint(dict(ref_file_tasks))
+    pprint(dict(ref_cell_tasks))
+    pprint(dict(workbooks_mtimes))
+    print(time.time())
