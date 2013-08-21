@@ -39,7 +39,7 @@ sort_tasks = collections.defaultdict(list)
 ref_file_tasks = collections.defaultdict(list)
 ref_cell_tasks = collections.defaultdict(list)
 
-workbooks_mtimes = {}
+workbooks_mtimes = collections.Counter()
 title_workbooks_map = collections.defaultdict(set)
 db_cache = collections.defaultdict(list)
 
@@ -253,8 +253,7 @@ def get_keys_attrs(sheet):
         if note:
             attrs.append(note_text_to_attr(note.text))
         else:
-            attrs.append(None)
-
+            attrs.append({})
     return keys, attrs
 
 
@@ -318,7 +317,7 @@ def apply_attrs(values, attrs, custom_attrs, rowx):
 
         o.append(x)
         colx += 1
-    else:   # all is well
+    else:   # error is broken(break statement), all is well here
         return o
 
 
@@ -340,7 +339,7 @@ def combine(keys, attrs, rows_values, custom_attrs):
     else:
         return o
 
-def filter_cell(type, value, datemode=0):
+def filter_cell_value(type, value, datemode=0):
     if type == xlrd.XL_CELL_NUMBER and value.is_integer():
         value = int(value)
     elif type == xlrd.XL_CELL_DATE:
@@ -354,7 +353,7 @@ def filter_cell(type, value, datemode=0):
 def parse_sheet(sheet):
     keys, attrs = get_keys_attrs(sheet)
     custom_attrs = get_custom_attrs(sheet)
-    rows_values = [list(map(filter_cell, sheet.row_types(i), sheet.row_values(i)))
+    rows_values = [list(map(filter_cell_value, sheet.row_types(i), sheet.row_values(i)))
                    for i in range(1, sheet.nrows)]
     return combine(keys, attrs, rows_values, custom_attrs)
 
@@ -407,10 +406,12 @@ if __name__ == "__main__":
     #...
 
     #pprint(list(db.values()))
+    # persisting usable infos
     db.update(db_cache)
     db["title_workbooks_map"] = title_workbooks_map
     db["workbooks_mtimes"] = workbooks_mtimes
     db.close()
+
     pprint(dict(title_workbooks_map))
     pprint(dict(uniq_tasks))
     pprint(dict(sort_tasks))
