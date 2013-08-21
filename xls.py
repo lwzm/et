@@ -43,6 +43,7 @@ workbooks_mtimes = collections.Counter()
 title_workbooks_map = collections.defaultdict(set)
 db_cache = collections.defaultdict(list)
 
+
 def view(xls_file):
     for k, v in get_values(xls_file).items():
         print("%s:" % k, dump_raw(v))
@@ -83,7 +84,7 @@ def get_notes(xls):
     return all_notes
 
 
-def check():
+def check(db, prefix=""):
     """check uniq_tasks sort_tasks"""
     for pos, lst in uniq_tasks.items():
         if len(frozenset(lst)) != len(lst):
@@ -91,6 +92,19 @@ def check():
     for pos, lst in sort_tasks.items():
         if sorted(lst) != list(lst):
             print("sorted is false:", pos)
+    for folder, files in ref_file_tasks.items():
+        fs = set(os.listdir(os.path.join(prefix, folder)))
+        for f, pos in files:
+            if f not in fs:
+                print("%s: %s is not in %s" % (pos, f, folder))
+    for expr, cells in ref_cell_tasks.items():
+        t, k = expr.split(".")
+        vs = set(i[k] for i in db[t])
+        for v, pos in cells:
+            if v not in vs:
+                print("%s: %s is not in %s" % (pos, v, expr))
+
+
 
 strip = lambda s: s.strip()
 
@@ -369,7 +383,7 @@ def parse(xls):
     mtime = os.stat(xls).st_mtime
     if mtime == workbooks_mtimes[xls]:
         print("pass")
-        #return
+        return
     workbooks_mtimes[xls] = mtime
     workbook = xlrd.open_workbook(xls)
     progress.clear()
@@ -418,13 +432,14 @@ if __name__ == "__main__":
     db.update(db_cache)
     db["title_workbooks_map"] = title_workbooks_map
     db["workbooks_mtimes"] = workbooks_mtimes
+
+    check(db, "..")
+
     db.close()
 
-    pprint(dict(title_workbooks_map))
-    pprint(dict(uniq_tasks))
-    pprint(dict(sort_tasks))
-    pprint(dict(ref_file_tasks))
-    pprint(dict(ref_cell_tasks))
-    pprint(dict(workbooks_mtimes))
-    print(time.time())
-    check()
+    #pprint(dict(title_workbooks_map))
+    #pprint(dict(uniq_tasks))
+    #pprint(dict(sort_tasks))
+    #pprint(dict(ref_file_tasks))
+    #pprint(dict(ref_cell_tasks))
+    #pprint(dict(workbooks_mtimes))
