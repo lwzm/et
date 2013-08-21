@@ -83,6 +83,14 @@ def get_notes(xls):
     return all_notes
 
 
+def check():
+    """check uniq_tasks sort_tasks"""
+    for pos, lst in uniq_tasks.items():
+        if len(frozenset(lst)) != len(lst):
+            print("unique is false:", pos)
+    for pos, lst in sort_tasks.items():
+        if sorted(lst) != list(lst):
+            print("sorted is false:", pos)
 
 strip = lambda s: s.strip()
 
@@ -361,7 +369,7 @@ def parse(xls):
     mtime = os.stat(xls).st_mtime
     if mtime == workbooks_mtimes[xls]:
         print("pass")
-        return
+        #return
     workbooks_mtimes[xls] = mtime
     workbook = xlrd.open_workbook(xls)
     progress.clear()
@@ -419,3 +427,4 @@ if __name__ == "__main__":
     pprint(dict(ref_cell_tasks))
     pprint(dict(workbooks_mtimes))
     print(time.time())
+    check()
