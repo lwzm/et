@@ -34,8 +34,8 @@ progress = {
 
 uniq_tasks = collections.defaultdict(list)
 sort_tasks = collections.defaultdict(list)
-ref_file_tasks = collections.defaultdict(set)
-ref_cell_tasks = collections.defaultdict(set)
+ref_file_tasks = collections.defaultdict(list)
+ref_cell_tasks = collections.defaultdict(list)
 
 workbook_mtime_map = {}
 title_workbooks_map = collections.defaultdict(set)
@@ -272,6 +272,9 @@ def apply_attrs(values, attrs, custom_attrs, rowx):
         progress["column"] = colname
         abs_colname = "%s -> %s -> %s" \
                       % (progress["xls"], progress["sheet"], colname)
+        abs_cellname = "%s -> %s -> %s" \
+                       % (progress["xls"], progress["sheet"],
+                          xlrd.cellname(rowx, colx))
 
         if attr:
             #
@@ -307,9 +310,9 @@ def apply_attrs(values, attrs, custom_attrs, rowx):
             _ref = attr.get("ref")
             if _ref:
                 if "/" in _ref:
-                    ref_file_tasks[_ref].add(x)
+                    ref_file_tasks[_ref].append([x, abs_cellname])
                 else:
-                    ref_cell_tasks[_ref].add(x)
+                    ref_cell_tasks[_ref].append([x, abs_cellname])
 
         o.append(x)
         colx += 1
