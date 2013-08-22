@@ -416,7 +416,13 @@ def parse(xls):
 
 
 if __name__ == "__main__":
-    force = not True  # todo: read it from cmdline
+    import argparse
+    parser = argparse.ArgumentParser()
+    parser.add_argument("-f", "--force", action="store_const", const=True)
+    args = parser.parse_args()
+
+    force = args.force
+
     #sys.argv.append("b.xls")
     #xls = sys.argv[1]
     #view(xls)
