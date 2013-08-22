@@ -40,7 +40,7 @@ ref_file_tasks = collections.defaultdict(list)
 ref_cell_tasks = collections.defaultdict(list)
 
 workbooks_mtimes = collections.Counter()
-title_workbook_sheet = collections.defaultdict(list)
+title_workbook_sheet = collections.defaultdict(set)
 db_cache = collections.defaultdict(list)
 
 
@@ -110,9 +110,10 @@ def check(db, prefix=""):
             if v not in vs:
                 print("%s: %s is not in %s" % (pos, v, expr))
     for k, v in title_workbook_sheet.items():
-        if len([xls for xls, sheet in v]) != 1:
-            print("title %s must be distributed over sheets in ONE xls" \
-                  % (k,))
+        workbooks = set([xls for xls, sheet in v])
+        if len(workbooks) != 1:
+            print("title `%s` must be distributed over sheets in ONE xls, %s" \
+                  % (k, v))
 
 
 
@@ -391,11 +392,6 @@ def parse_sheet(sheet):
     return combine(keys, attrs, rows_values, custom_attrs)
 
 def parse(xls):
-    mtime = os.stat(xls).st_mtime
-    if mtime == workbooks_mtimes[xls]:
-        print("pass %s" % xls)
-        return
-    workbooks_mtimes[xls] = mtime
     workbook = xlrd.open_workbook(xls)
     progress.clear()
     progress["xls"] = xls
@@ -407,7 +403,7 @@ def parse(xls):
             title = head_note.author
             if title:
                 progress["title"] = title
-                title_workbook_sheet[title].append([xls, sheet.name])
+                title_workbook_sheet[title].add((xls, sheet.name))
                 s = parse_sheet(sheet)
                 #pprint(s)
                 if s:
@@ -420,10 +416,11 @@ def parse(xls):
 
 
 if __name__ == "__main__":
-    sys.argv.append("b.xls")
-    xls = sys.argv[1]
+    force = not True  # todo: read it from cmdline
+    #sys.argv.append("b.xls")
+    #xls = sys.argv[1]
     #view(xls)
-    db = shelve.open("bb")
+    db = shelve.open(".db")
     #print(list(db.keys()))
     #print(list(db.values()))
     #quit()
@@ -433,12 +430,20 @@ if __name__ == "__main__":
     workbooks_mtimes.update(db.get("_workbooks_mtimes") or {})
 
     # parsing...
-    parse(xls)
-    #parse(xls2)
-    #parse(xls3)
-    #...
+    for root, dirs, files in os.walk("."):
+        if ".git" in dirs:
+            dirs.remove(".git")
+        for f in sorted(filter(lambda s: s.endswith(".xls"), files)):
+            f = os.path.abspath(os.path.join(root, f))
+            mtime = os.stat(f).st_mtime
+            if force or mtime != workbooks_mtimes[f]:
+                workbooks_mtimes[f] = mtime
+                parse(f)
+            else:
+                print("pass %s" % f)
 
     #pprint(list(db.values()))
+
     # persisting usable infos
     db.update(db_cache)
     db["_title_workbook_sheet"] = title_workbook_sheet
@@ -448,7 +453,7 @@ if __name__ == "__main__":
 
     db.close()
 
-    pprint(dict(title_workbook_sheet))
+    #pprint(dict(title_workbook_sheet))
     #pprint(dict(uniq_tasks))
     #pprint(dict(sort_tasks))
     #pprint(dict(ref_file_tasks))
