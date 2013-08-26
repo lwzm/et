@@ -136,7 +136,7 @@ def bb_list(raw):
     if not isinstance(raw, str):
         raw = str(raw)
     values = map(quoted, map(strip, raw.split(",")))
-    return eval("[%s]" % ', '.join(values))
+    return eval("[%s]" % ",".join(values))
 
 def bb_key_value(raw):
     k, v = map(quoted, map(strip, raw.split(":")))
@@ -146,7 +146,7 @@ def bb_dict(raw):
     """accept ONLY spliter CR("\n")
     """
     values = map(bb_key_value, raw.split("\n"))
-    return eval("{%s}" % ', '.join(values))
+    return eval("{%s}" % ",".join(values))
 
 def bb_time(raw):
     """use value returned by xldate_as_tuple() directly"""
