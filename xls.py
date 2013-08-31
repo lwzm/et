@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 # xls
 
 import collections
@@ -426,7 +426,7 @@ if __name__ == "__main__":
     #sys.argv.append("b.xls")
     #xls = sys.argv[1]
     #view(xls)
-    db = shelve.open(".db")
+    db = shelve.open(".db", "n")
     #print(list(db.keys()))
     #print(list(db.values()))
     #quit()
