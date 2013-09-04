@@ -426,7 +426,7 @@ if __name__ == "__main__":
     #sys.argv.append("b.xls")
     #xls = sys.argv[1]
     #view(xls)
-    db = shelve.open(".db", "n")
+    db = shelve.open(".db")
     #print(list(db.keys()))
     #print(list(db.values()))
     #quit()
@@ -441,7 +441,7 @@ if __name__ == "__main__":
             dirs.remove(".git")
         for f in sorted(filter(lambda s: s.endswith(".xls"), files)):
             f = os.path.abspath(os.path.join(root, f))
-            mtime = os.stat(f).st_mtime
+            mtime = os.path.getmtime(f)
             if force or mtime != workbooks_mtimes[f]:
                 workbooks_mtimes[f] = mtime
                 parse(f)
