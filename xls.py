@@ -430,8 +430,9 @@ if __name__ == "__main__":
 
     # parsing...
     for root, dirs, files in os.walk("."):
-        if ".git" in dirs:
-            dirs.remove(".git")
+        for ignore in list(filter(lambda s: s.startswith("."), dirs)):
+            dirs.remove(ignore)
+        dirs.sort()
         for f in sorted(filter(lambda s: s.endswith(".xls"), files)):
             f = os.path.abspath(os.path.join(root, f))
             mtime = os.path.getmtime(f)
