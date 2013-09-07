@@ -413,6 +413,15 @@ def parse(xls):
                     pprint(progress)
                     continue
 
+def walk(directory, dir_filter=None, file_filter=None):
+    """return a list of all files in this directory, sorted"""
+    import os
+    all_files = []
+    for root, dirs, files in os.walk(directory):
+        dirs[:] = sorted(filter(dir_filter, dirs))
+        all_files.extend(map(lambda f: os.path.abspath(os.path.join(root, f)),
+                         sorted(filter(file_filter, files))))
+    return all_files
 
 
 if __name__ == "__main__":
@@ -428,6 +437,7 @@ if __name__ == "__main__":
     title_workbook_sheet.update(db.get("_title_workbook_sheet") or {})
     workbooks_mtimes.update(db.get("_workbooks_mtimes") or {})
 
+    #print(walk(".", lambda s: not s.startswith("."), lambda s: s.endswith(".xls")))
     # parsing...
     for root, dirs, files in os.walk("."):
         for ignore in list(filter(lambda s: s.startswith("."), dirs)):
