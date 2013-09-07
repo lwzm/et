@@ -421,15 +421,8 @@ if __name__ == "__main__":
     parser.add_argument("-f", "--force", action="store_const", const=True)
     args = parser.parse_args()
 
-    force = args.force
-
-    #sys.argv.append("b.xls")
-    #xls = sys.argv[1]
     #view(xls)
-    db = shelve.open(".db")
-    #print(list(db.keys()))
-    #print(list(db.values()))
-    #quit()
+    db = shelve.open(".db", "n" if args.force else "c")
 
     # loading...
     title_workbook_sheet.update(db.get("_title_workbook_sheet") or {})
@@ -442,7 +435,7 @@ if __name__ == "__main__":
         for f in sorted(filter(lambda s: s.endswith(".xls"), files)):
             f = os.path.abspath(os.path.join(root, f))
             mtime = os.path.getmtime(f)
-            if force or mtime != workbooks_mtimes[f]:
+            if mtime != workbooks_mtimes[f]:
                 workbooks_mtimes[f] = mtime
                 parse(f)
             else:
