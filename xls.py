@@ -437,20 +437,17 @@ if __name__ == "__main__":
     title_workbook_sheet.update(db.get("_title_workbook_sheet") or {})
     workbooks_mtimes.update(db.get("_workbooks_mtimes") or {})
 
-    #print(walk(".", lambda s: not s.startswith("."), lambda s: s.endswith(".xls")))
     # parsing...
-    for root, dirs, files in os.walk("."):
-        for ignore in list(filter(lambda s: s.startswith("."), dirs)):
-            dirs.remove(ignore)
-        dirs.sort()
-        for f in sorted(filter(lambda s: s.endswith(".xls"), files)):
-            f = os.path.abspath(os.path.join(root, f))
-            mtime = os.path.getmtime(f)
-            if mtime != workbooks_mtimes[f]:
-                workbooks_mtimes[f] = mtime
-                parse(f)
-            else:
-                print("pass %s" % f)
+    import os
+    for f in walk(".",
+                  lambda s: not s.startswith("."),
+                  lambda s: s.endswith(".xls")):
+        mtime = os.path.getmtime(f)
+        if mtime != workbooks_mtimes[f]:
+            workbooks_mtimes[f] = mtime
+            parse(f)
+        else:
+            print("pass %s" % f)
 
     #pprint(list(db.values()))
 
