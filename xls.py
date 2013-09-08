@@ -431,11 +431,14 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     #view(xls)
-    db = shelve.open(".db", "n" if args.force else "c")
 
-    # loading...
-    title_workbook_sheet.update(db.get("_title_workbook_sheet") or {})
-    workbooks_mtimes.update(db.get("_workbooks_mtimes") or {})
+    if args.force:
+        db = shelve.open(".db", "n")
+    else:
+        db = shelve.open(".db", "c")
+        # loading...
+        title_workbook_sheet.update(db.get("_title_workbook_sheet") or {})
+        workbooks_mtimes.update(db.get("_workbooks_mtimes") or {})
 
     # parsing...
     import os
