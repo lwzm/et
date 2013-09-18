@@ -117,9 +117,6 @@ def check(db, prefix=""):
 
 
 
-
-strip = lambda s: s.strip()
-
 try_int = lambda s: int(s) if s.isdigit() else s
 
 def quoted(s):
@@ -131,22 +128,31 @@ def quoted(s):
     return s
 
 def bb_list(raw):
-    """accept ONLY spliter comma(",")
+    r"""accept ONLY spliter comma(",") and CR("\n")
+    >>> bb_list("a , 1")
+    ['a', 1]
+    >>> bb_list("a,,,, 1,,,")
+    ['a', 1]
+    >>> bb_list("a \n 1")
+    ['a', 1]
+    >>> bb_list("a, \n 1")
+    ['a', 1]
     """
     if not isinstance(raw, str):
         raw = str(raw)
-    values = map(quoted, map(strip, raw.split(",")))
-    return eval("[%s]" % ",".join(values))
+    values = (quoted(_.strip())
+              for _ in raw.replace("\n", ",").split(",") if _.strip())
+    return eval(r"""[%s]""" % ",".join(values))
 
 def bb_key_value(raw):
-    k, v = map(quoted, map(strip, raw.split(":")))
+    k, v = (quoted(_.strip()) for _ in raw.split(":"))
     return "%s: %s" % (k, v)
 
 def bb_dict(raw):
     """accept ONLY spliter CR("\n")
     """
     values = map(bb_key_value, raw.split("\n"))
-    return eval("{%s}" % ",".join(values))
+    return eval(r"""{%s}""" % ",".join(values))
 
 def bb_time(raw):
     """use value returned by xldate_as_tuple() directly"""
@@ -241,11 +247,11 @@ def note_text_to_attr(text):
     ...
     """
     attr = {}
-    for line in filter(None, map(strip, text.split("\n"))):
+    for line in filter(None, (_.strip() for _ in text.split("\n"))):
         token = line.split(":", 1)
         if len(token) != 2:
             continue
-        k, v = map(strip, token)
+        k, v = (_.strip() for _ in token)
         if k == "type":
             attr["type"] = eval(v, None, bb_types)
         elif k == "test":
@@ -424,11 +430,18 @@ def walk(directory, dir_filter=None, file_filter=None):
     return all_files
 
 
-if __name__ == "__main__":
+def main():
     import argparse
     parser = argparse.ArgumentParser()
     parser.add_argument("-f", "--force", action="store_const", const=True)
+    parser.add_argument("-t", "--test", action="store_const", const=True)
     args = parser.parse_args()
+
+    if args.test:
+        print("doctest:")
+        import doctest
+        doctest.testmod()
+        return
 
     #view(xls)
 
@@ -469,3 +482,7 @@ if __name__ == "__main__":
     #pprint(dict(ref_file_tasks))
     #pprint(dict(ref_cell_tasks))
     #pprint(dict(workbooks_mtimes))
+
+
+if __name__ == "__main__":
+    main()
