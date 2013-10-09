@@ -162,12 +162,12 @@ def bb_time(raw):
 
 rc_key = re.compile(r"([a-z]+)(\d*)")
 
-def bb_reward(raw):
+def bb_mess(raw):
     """see bb.xls"""
     units = raw.split()
-    rws = []   # for all rewards
-    w0 = []    # for weight rewards, one `weight loop`, reward
-    w1 = []    # for weight rewards, one `weight loop`, weight
+    mess = []   # all
+    w0 = []    # for weight things, one `weight loop`, thing
+    w1 = []    # for weight things, one `weight loop`, weight
 
     for i in units:
         rw = []
@@ -197,41 +197,41 @@ def bb_reward(raw):
                 flush = False
         if flush:
             if w0 and w1:
-                rws.append([w0[:], w1[:]])
+                mess.append([w0[:], w1[:]])
                 del w0[:], w1[:]
-            rws.append(rw)
+            mess.append(rw)
 
     if w0 and w1:   # flush tail
-        rws.append([w0[:], w1[:]])
+        mess.append([w0[:], w1[:]])
         del w0[:], w1[:]
 
-    return rws
+    return mess
 
 
-def bb_require(raw):
+def bb_req(raw):
     """see bb.xls"""
-    rq = raw.split(":")
-    l = len(rq)
-    assert rq[0][0].isalpha(), "invalid `%s`" % (rq[0],)
-    assert l == 2 or l == 3, "length must be 2 or 3" % (rq,)
-    n = rq[1].strip()
+    req = raw.split(":")
+    l = len(req)
+    assert req[0][0].isalpha(), "invalid `%s`" % (req[0],)
+    assert l == 2 or l == 3, "length must be 2 or 3" % (req,)
+    n = req[1].strip()
     if n.isdigit():   # L:N[:R]
-        rq[1] = int(n)
+        req[1] = int(n)
         if l == 3:
-            compile(rq[2], "just test", "eval")
+            compile(req[2], "just test", "eval")
     else:   # L:E[:N]
         compile(n, "just test", "eval")
         if l == 3:
-            rq[2] = int(rq[2])
-    return rq
+            req[2] = int(req[2])
+    return req
 
 
 bb_types = {
     "list": bb_list,
     "dict": bb_dict,
     "time": bb_time,
-    "reward": bb_reward,
-    "require": bb_require,
+    "mess": bb_mess,
+    "req": bb_req,
 }
 
 def list_to_tuple(v):
@@ -241,8 +241,8 @@ def list_to_tuple(v):
 
 
 def note_text_to_attr(text):
-    """type, test, ...
-    type: int, float, str, bool, list, time, reward, require, ...
+    """type and test and ...
+    type: int, float, str, bool, list, dict, time, mess, req, ...
     test: any python statement
     ...
     """
@@ -465,7 +465,7 @@ def main():
         else:
             print("pass %s" % f)
 
-    #pprint(list(db.values()))
+    pprint(list(db.values()))
 
     # persisting usable infos
     db.update(db_cache)
