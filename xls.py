@@ -10,6 +10,7 @@ import re
 import shelve
 import sys
 import time
+import traceback
 
 import xlrd
 
@@ -320,9 +321,8 @@ def apply_attrs(values, attrs, custom_attrs, rowx):
             if _type:
                 try:
                     x = _type(x)
-                except Exception as e:
-                    progress["error"] = "type error: %s, %s" \
-                                        % (type(e).__name__, e)
+                except Exception:
+                    progress["error"] = "ERROR TYPE:\n%s" % traceback.format_exc()
                     break
             #
             _test = attr.get("test")
@@ -332,9 +332,8 @@ def apply_attrs(values, attrs, custom_attrs, rowx):
                         progress["error"] = "test %r faild: x is %r" \
                                             % (_test.co_filename, x)
                         break
-                except Exception as e:
-                    progress["error"] = "test error: type error: %s, %s" \
-                                        % (type(e).__name__, e)
+                except Exception:
+                    progress["error"] = "ERROR TEST:\n%s" % traceback.format_exc()
                     break
             #
             _uniq = attr.get("uniq")
