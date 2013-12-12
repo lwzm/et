@@ -222,8 +222,6 @@ def bb_req(raw):
             compile(req[2], "just test", "eval")
     else:   # L:E[:N]
         compile(n, "just test", "eval")
-        if l == 3:
-            req[2] = int(req[2])
     return req
 
 
