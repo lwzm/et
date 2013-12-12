@@ -10,6 +10,7 @@ import re
 import shelve
 import sys
 import time
+import traceback
 
 import xlrd
 
@@ -117,9 +118,6 @@ def check(db, prefix=""):
 
 
 
-
-strip = lambda s: s.strip()
-
 try_int = lambda s: int(s) if s.isdigit() else s
 
 def quoted(s):
@@ -131,22 +129,31 @@ def quoted(s):
     return s
 
 def bb_list(raw):
-    """accept ONLY spliter comma(",")
+    r"""accept ONLY spliter comma(",") and CR("\n")
+    >>> bb_list("a , 1")
+    ['a', 1]
+    >>> bb_list("a,,,, 1,,,")
+    ['a', 1]
+    >>> bb_list("a \n 1")
+    ['a', 1]
+    >>> bb_list("a, \n 1")
+    ['a', 1]
     """
     if not isinstance(raw, str):
         raw = str(raw)
-    values = map(quoted, map(strip, raw.split(",")))
-    return eval("[%s]" % ",".join(values))
+    values = (quoted(_.strip())
+              for _ in raw.replace("\n", ",").split(",") if _.strip())
+    return eval(r"""[%s]""" % ",".join(values))
 
 def bb_key_value(raw):
-    k, v = map(quoted, map(strip, raw.split(":")))
+    k, v = (quoted(_.strip()) for _ in raw.split(":"))
     return "%s: %s" % (k, v)
 
 def bb_dict(raw):
     """accept ONLY spliter CR("\n")
     """
     values = map(bb_key_value, raw.split("\n"))
-    return eval("{%s}" % ",".join(values))
+    return eval(r"""{%s}""" % ",".join(values))
 
 def bb_time(raw):
     """use value returned by xldate_as_tuple() directly"""
@@ -156,12 +163,12 @@ def bb_time(raw):
 
 rc_key = re.compile(r"([a-z]+)(\d*)")
 
-def bb_reward(raw):
+def bb_mess(raw):
     """see bb.xls"""
     units = raw.split()
-    rws = []   # for all rewards
-    w0 = []    # for weight rewards, one `weight loop`, reward
-    w1 = []    # for weight rewards, one `weight loop`, weight
+    mess = []   # all
+    w0 = []    # for weight things, one `weight loop`, thing
+    w1 = []    # for weight things, one `weight loop`, weight
 
     for i in units:
         rw = []
@@ -191,41 +198,39 @@ def bb_reward(raw):
                 flush = False
         if flush:
             if w0 and w1:
-                rws.append([w0[:], w1[:]])
+                mess.append([w0[:], w1[:]])
                 del w0[:], w1[:]
-            rws.append(rw)
+            mess.append(rw)
 
     if w0 and w1:   # flush tail
-        rws.append([w0[:], w1[:]])
+        mess.append([w0[:], w1[:]])
         del w0[:], w1[:]
 
-    return rws
+    return mess
 
 
-def bb_require(raw):
+def bb_req(raw):
     """see bb.xls"""
-    rq = raw.split(":")
-    l = len(rq)
-    assert rq[0][0].isalpha(), "invalid `%s`" % (rq[0],)
-    assert l == 2 or l == 3, "length must be 2 or 3" % (rq,)
-    n = rq[1].strip()
+    req = raw.split(":")
+    l = len(req)
+    assert req[0][0].isalpha(), "invalid `%s`" % (req[0],)
+    assert l == 2 or l == 3, "length must be 2 or 3" % (req,)
+    n = req[1].strip()
     if n.isdigit():   # L:N[:R]
-        rq[1] = int(n)
+        req[1] = int(n)
         if l == 3:
-            compile(rq[2], "just test", "eval")
+            compile(req[2], "just test", "eval")
     else:   # L:E[:N]
         compile(n, "just test", "eval")
-        if l == 3:
-            rq[2] = int(rq[2])
-    return rq
+    return req
 
 
 bb_types = {
     "list": bb_list,
     "dict": bb_dict,
     "time": bb_time,
-    "reward": bb_reward,
-    "require": bb_require,
+    "mess": bb_mess,
+    "req": bb_req,
 }
 
 def list_to_tuple(v):
@@ -235,17 +240,17 @@ def list_to_tuple(v):
 
 
 def note_text_to_attr(text):
-    """type, test, ...
-    type: int, float, str, bool, list, time, reward, require, ...
+    """type and test and ...
+    type: int, float, str, bool, list, dict, time, mess, req, ...
     test: any python statement
     ...
     """
     attr = {}
-    for line in filter(None, map(strip, text.split("\n"))):
+    for line in filter(None, (_.strip() for _ in text.split("\n"))):
         token = line.split(":", 1)
         if len(token) != 2:
             continue
-        k, v = map(strip, token)
+        k, v = (_.strip() for _ in token)
         if k == "type":
             attr["type"] = eval(v, None, bb_types)
         elif k == "test":
@@ -314,9 +319,8 @@ def apply_attrs(values, attrs, custom_attrs, rowx):
             if _type:
                 try:
                     x = _type(x)
-                except Exception as e:
-                    progress["error"] = "type error: %s, %s" \
-                                        % (type(e).__name__, e)
+                except Exception:
+                    progress["error"] = "ERROR TYPE:\n%s" % traceback.format_exc()
                     break
             #
             _test = attr.get("test")
@@ -326,9 +330,8 @@ def apply_attrs(values, attrs, custom_attrs, rowx):
                         progress["error"] = "test %r faild: x is %r" \
                                             % (_test.co_filename, x)
                         break
-                except Exception as e:
-                    progress["error"] = "test error: type error: %s, %s" \
-                                        % (type(e).__name__, e)
+                except Exception:
+                    progress["error"] = "ERROR TEST:\n%s" % traceback.format_exc()
                     break
             #
             _uniq = attr.get("uniq")
@@ -424,11 +427,18 @@ def walk(directory, dir_filter=None, file_filter=None):
     return all_files
 
 
-if __name__ == "__main__":
+def main():
     import argparse
     parser = argparse.ArgumentParser()
     parser.add_argument("-f", "--force", action="store_const", const=True)
+    parser.add_argument("-t", "--test", action="store_const", const=True)
     args = parser.parse_args()
+
+    if args.test:
+        print("doctest:")
+        import doctest
+        doctest.testmod()
+        return
 
     #view(xls)
 
@@ -452,7 +462,7 @@ if __name__ == "__main__":
         else:
             print("pass %s" % f)
 
-    #pprint(list(db.values()))
+    pprint(list(db.values()))
 
     # persisting usable infos
     db.update(db_cache)
@@ -469,3 +479,7 @@ if __name__ == "__main__":
     #pprint(dict(ref_file_tasks))
     #pprint(dict(ref_cell_tasks))
     #pprint(dict(workbooks_mtimes))
+
+
+if __name__ == "__main__":
+    main()
