@@ -2,6 +2,7 @@
 # xls
 
 import collections
+import configparser
 import functools
 import itertools
 import json
@@ -35,14 +36,14 @@ progress = {
     #"error": None,
 }
 
+xls_tasks = collections.defaultdict(list)
 uniq_tasks = collections.defaultdict(list)
 sort_tasks = collections.defaultdict(list)
 ref_file_tasks = collections.defaultdict(list)
 ref_cell_tasks = collections.defaultdict(list)
+json_outputs = collections.defaultdict(list)
 
 workbooks_mtimes = collections.Counter()
-title_workbook_sheet = collections.defaultdict(set)
-db_cache = collections.defaultdict(list)
 
 
 def view(xls_file):
@@ -85,13 +86,12 @@ def get_notes(xls):
     return all_notes
 
 
-def check(db, prefix=""):
+def check(prefix=""):
     """check
     uniq_tasks
     sort_tasks
     ref_file_tasks
     ref_cell_tasks
-    title_workbook_sheet
     """
     for pos, lst in uniq_tasks.items():
         if len(frozenset(lst)) != len(lst):
@@ -104,17 +104,6 @@ def check(db, prefix=""):
         for f, pos in files:
             if f not in fs:
                 print("%s: %s is not in %s" % (pos, f, folder))
-    for expr, cells in ref_cell_tasks.items():
-        t, k = expr.split(".")
-        vs = set(i[k] for i in db[t])
-        for v, pos in cells:
-            if v not in vs:
-                print("%s: %s is not in %s" % (pos, v, expr))
-    for k, v in title_workbook_sheet.items():
-        workbooks = set([xls for xls, sheet in v])
-        if len(workbooks) != 1:
-            print("title `%s` must be distributed over sheets in ONE xls, %s" \
-                  % (k, v))
 
 
 
@@ -254,7 +243,7 @@ def note_text_to_attr(text):
         if k == "type":
             attr["type"] = eval(v, None, bb_types)
         elif k == "test":
-            attr["test"] = compile(v, v, "eval")
+            attr["test"] = v#compile(v, v, "eval")
         elif k == "ref":
             attr["ref"] = v
         elif k == "uniq":
@@ -390,31 +379,15 @@ def filter_cell_value(type, value, datemode=0):
 def parse_sheet(sheet):
     keys, attrs = get_keys_attrs(sheet)
     custom_attrs = get_custom_attrs(sheet)
-    rows_values = [list(map(filter_cell_value, sheet.row_types(i), sheet.row_values(i)))
-                   for i in range(1, sheet.nrows)]
+    #print(keys)
+    #pprint(attrs)
+    #print(custom_attrs)
+    rows_values = [
+        list(map(filter_cell_value, sheet.row_types(i), sheet.row_values(i)))
+        for i in range(1, sheet.nrows)
+    ]
     return combine(keys, attrs, rows_values, custom_attrs)
 
-def parse(xls):
-    workbook = xlrd.open_workbook(xls)
-    progress.clear()
-    progress["xls"] = xls
-    for sheet in workbook.sheets():
-        cell_note_map = sheet.cell_note_map
-        head_note = cell_note_map.get((0, 0))
-        if head_note:
-            progress["sheet"] = sheet.name
-            title = head_note.author
-            if title:
-                progress["title"] = title
-                title_workbook_sheet[title].add((xls, sheet.name))
-                s = parse_sheet(sheet)
-                #pprint(s)
-                if s:
-                    db_cache[title].extend(s)
-                else:
-                    print("beiju:")
-                    pprint(progress)
-                    continue
 
 def walk(directory, dir_filter=None, file_filter=None):
     """return a list of all files in this directory, sorted"""
@@ -428,58 +401,30 @@ def walk(directory, dir_filter=None, file_filter=None):
 
 
 def main():
-    import argparse
-    parser = argparse.ArgumentParser()
-    parser.add_argument("-f", "--force", action="store_const", const=True)
-    parser.add_argument("-t", "--test", action="store_const", const=True)
-    args = parser.parse_args()
+    cfg = configparser.ConfigParser()
+    cfg.read("idx")
 
-    if args.test:
-        print("doctest:")
-        import doctest
-        doctest.testmod()
-        return
+    for i in cfg.sections():
+        for j in cfg[i]:
+            xls_tasks[cfg[i][j]].append([i, j])
 
-    #view(xls)
+    #pprint(xls_tasks)
 
-    if args.force:
-        db = shelve.open(".db", "n")
-    else:
-        db = shelve.open(".db", "c")
-        # loading...
-        title_workbook_sheet.update(db.get("_title_workbook_sheet") or {})
-        workbooks_mtimes.update(db.get("_workbooks_mtimes") or {})
+    def parse(xls, sheet):
+        progress["xls"] = xls
+        progress["sheet"] = sheet
+        sheet = xlrd.open_workbook(xls).sheet_by_name(sheet)
+        return parse_sheet(sheet)
 
-    # parsing...
-    import os
-    for f in walk(".",
-                  lambda s: not s.startswith("."),
-                  lambda s: s.endswith(".xls")):
-        mtime = os.path.getmtime(f)
-        if mtime != workbooks_mtimes[f]:
-            workbooks_mtimes[f] = mtime
-            parse(f)
-        else:
-            print("pass %s" % f)
+    for k, v in xls_tasks.items():
+        for xls, sheet in v:
+            json_outputs[k].extend(parse(xls, sheet))
 
-    pprint(list(db.values()))
+    for k, v in json_outputs.items():
+        with open(os.path.join("output", k), "w") as f:
+            f.write(dump_sorted(v))
 
-    # persisting usable infos
-    db.update(db_cache)
-    db["_title_workbook_sheet"] = title_workbook_sheet
-    db["_workbooks_mtimes"] = workbooks_mtimes
-
-    check(db, "..")
-
-    db.close()
-
-    #pprint(dict(title_workbook_sheet))
-    #pprint(dict(uniq_tasks))
-    #pprint(dict(sort_tasks))
-    #pprint(dict(ref_file_tasks))
-    #pprint(dict(ref_cell_tasks))
-    #pprint(dict(workbooks_mtimes))
-
+    check("..")
 
 if __name__ == "__main__":
     main()
