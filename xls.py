@@ -18,6 +18,12 @@ import xlrd
 from pprint import pprint
 #pprint = functools.partial(pprint, width=40)
 
+class Dict(dict):
+    def __missing__(self, k):
+        return k
+
+eval_env = Dict()
+
 dump_sorted = functools.partial(json.dumps, ensure_ascii=False,
                                 separators = (",", ": "),
                                 sort_keys=True, indent=4)
@@ -105,45 +111,6 @@ def check(prefix=""):
             if f not in fs:
                 print("%s: %s is not in %s" % (pos, f, folder))
 
-
-
-try_int = lambda s: int(s) if s.isdigit() else s
-
-def quoted(s):
-    """quote a string, unless this thing could be a number"""
-    try:
-        float(s)
-    except ValueError:
-        s = repr(s)
-    return s
-
-def bb_list(raw):
-    r"""accept ONLY spliter comma(",") and CR("\n")
-    >>> bb_list("a , 1")
-    ['a', 1]
-    >>> bb_list("a,,,, 1,,,")
-    ['a', 1]
-    >>> bb_list("a \n 1")
-    ['a', 1]
-    >>> bb_list("a, \n 1")
-    ['a', 1]
-    """
-    if not isinstance(raw, str):
-        raw = str(raw)
-    values = (quoted(_.strip())
-              for _ in raw.replace("\n", ",").split(",") if _.strip())
-    return eval(r"""[%s]""" % ",".join(values))
-
-def bb_key_value(raw):
-    k, v = (quoted(_.strip()) for _ in raw.split(":"))
-    return "%s: %s" % (k, v)
-
-def bb_dict(raw):
-    """accept ONLY spliter CR("\n")
-    """
-    values = map(bb_key_value, raw.split("\n"))
-    return eval(r"""{%s}""" % ",".join(values))
-
 def bb_time(raw):
     """use value returned by xldate_as_tuple() directly"""
     assert isinstance(raw, tuple), raw
@@ -215,17 +182,12 @@ def bb_req(raw):
 
 
 bb_types = {
-    "list": bb_list,
-    "dict": bb_dict,
+    "list": lambda raw: eval("[{}]".format(raw), None, eval_env),
+    "dict": lambda raw: eval("{" + raw + "}", None, eval_env),
     "time": bb_time,
     "mess": bb_mess,
     "req": bb_req,
 }
-
-def list_to_tuple(v):
-    if isinstance(v, (list, tuple)):
-        v = tuple(list_to_tuple(i) for i in v)
-    return v
 
 
 def note_text_to_attr(text):
