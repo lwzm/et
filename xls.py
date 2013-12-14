@@ -6,7 +6,9 @@ import configparser
 import functools
 import itertools
 import json
+import logging
 import os
+import pprint
 import re
 import shelve
 import sys
@@ -15,14 +17,11 @@ import traceback
 
 import xlrd
 
-from pprint import pprint
-#pprint = functools.partial(pprint, width=40)
+class Default(dict):
+    def __missing__(self, key):
+        return key
 
-class Dict(dict):
-    def __missing__(self, k):
-        return k
-
-eval_env = Dict()
+eval_env = Default()
 
 dump_sorted = functools.partial(json.dumps, ensure_ascii=False,
                                 separators = (",", ": "),
@@ -33,63 +32,29 @@ dump_raw = functools.partial(json.dumps, ensure_ascii=False,
 
 
 # global progress status
-progress = {
-    #"xls": None,
-    #"sheet": None,
-    #"row": None,
-    #"column": None,
-    #"title": None,
-    #"error": None,
-}
+progress = collections.OrderedDict.fromkeys(["xls", "sheet", "column", "row"])
 
-xls_tasks = collections.defaultdict(list)
-uniq_tasks = collections.defaultdict(list)
-sort_tasks = collections.defaultdict(list)
-ref_file_tasks = collections.defaultdict(list)
-ref_cell_tasks = collections.defaultdict(list)
-json_outputs = collections.defaultdict(list)
+
+class ListDefaultDict(collections.OrderedDict):
+    def __missing__(self, k):
+        self[k] = []
+        return self[k]
+
+xls_tasks = ListDefaultDict()
+uniq_tasks = ListDefaultDict()
+sort_tasks = ListDefaultDict()
+ref_file_tasks = ListDefaultDict()
+ref_cell_tasks = ListDefaultDict()
+json_outputs = ListDefaultDict()
+
 
 workbooks_mtimes = collections.Counter()
 
-
-def view(xls_file):
-    for k, v in get_values(xls_file).items():
-        print("%s:" % k, dump_raw(v))
-
-    print()
-
-    for k, v in get_notes(xls_file).items():
-        print("%s:" % k, dump_sorted(v))
-
-def get_values(xls):
-    """for hp"""
-    wb = xlrd.open_workbook(xls)
-    workbook = collections.OrderedDict()
-    for s in wb.sheets():
-        cell_note_map = s.cell_note_map
-        note = cell_note_map.get((0, 0))
-        if note:
-            sheet = collections.OrderedDict(title=note.author)
-            workbook[s.name] = sheet
-            for row in range(s.nrows):
-                rows = []
-                sheet["row %d" % (row + 1,)] = rows
-                for col in range(s.ncols):
-                    rows.append(s.cell(row, col).value)
-    return workbook
-
-def get_notes(xls):
-    """for me"""
-    wb = xlrd.open_workbook(xls)
-    all_notes = collections.OrderedDict()
-    for s in wb.sheets():
-        cell_note_map = s.cell_note_map
-        head_note = cell_note_map.get((0, 0))
-        if head_note and head_note.author:
-            notes = {xlrd.cellname(*k): v.text for k, v in cell_note_map.items()}
-            notes["@"] = "%s -> %s" % (xls, s.name)
-            all_notes[head_note.author] = notes
-    return all_notes
+logging.basicConfig(
+    #level=logging.DEBUG,
+    level=logging.INFO,
+    format="%(levelname)s:%(message)s",
+    )
 
 
 def check(prefix=""):
@@ -99,17 +64,26 @@ def check(prefix=""):
     ref_file_tasks
     ref_cell_tasks
     """
+    logging.info("check uniq_tasks:")
     for pos, lst in uniq_tasks.items():
+        logging.debug((pos, lst))
         if len(frozenset(lst)) != len(lst):
-            print("unique is false:", pos)
+            logging.warning(pos)
+
+    logging.info("check sort_tasks:")
     for pos, lst in sort_tasks.items():
+        logging.debug((pos, lst))
         if sorted(lst) != list(lst):
-            print("sorted is false:", pos)
+            logging.warning(pos)
+
+    logging.info("check ref_file_tasks:")
     for folder, files in ref_file_tasks.items():
         fs = set(os.listdir(os.path.join(prefix, folder)))
         for f, pos in files:
+            logging.debug((pos, f, folder))
             if f not in fs:
-                print("%s: %s is not in %s" % (pos, f, folder))
+                logging.warning(pos)
+
 
 def bb_time(raw):
     """use value returned by xldate_as_tuple() directly"""
@@ -117,7 +91,7 @@ def bb_time(raw):
     assert len(raw) == 6, raw
     return raw
 
-rc_key = re.compile(r"([a-z]+)(\d*)")
+rc_key_match = re.compile(r"([a-z]+)(\d*)").match
 
 def bb_mess(raw):
     """see bb.xls"""
@@ -132,7 +106,7 @@ def bb_mess(raw):
         keys = i.split(":")
         assert keys[0][0].isalpha(), keys[0]
 
-        i1, i2 = rc_key.match(keys[0]).groups()
+        i1, i2 = rc_key_match(keys[0]).groups()
         i3 = keys[1]
 
         rw.append(i1)
@@ -169,8 +143,8 @@ def bb_req(raw):
     """see bb.xls"""
     req = raw.split(":")
     l = len(req)
-    assert req[0][0].isalpha(), "invalid `%s`" % (req[0],)
-    assert l == 2 or l == 3, "length must be 2 or 3" % (req,)
+    assert req[0][0].isalpha(), "invalid `{}`".format(req[0])
+    assert l == 2 or l == 3, "length of {} must be 2 or 3".format(req)
     n = req[1].strip()
     if n.isdigit():   # L:N[:R]
         req[1] = int(n)
@@ -182,6 +156,7 @@ def bb_req(raw):
 
 
 bb_types = {
+    # my custom formated list and dict
     "list": lambda raw: eval("[{}]".format(raw), None, eval_env),
     "dict": lambda raw: eval("{" + raw + "}", None, eval_env),
     "time": bb_time,
@@ -205,7 +180,7 @@ def note_text_to_attr(text):
         if k == "type":
             attr["type"] = eval(v, None, bb_types)
         elif k == "test":
-            attr["test"] = v#compile(v, v, "eval")
+            attr["test"] = v #compile(v, v, "eval")
         elif k == "ref":
             attr["ref"] = v
         elif k == "uniq":
@@ -251,6 +226,7 @@ def apply_attrs(values, attrs, custom_attrs, rowx):
     """convert and check cell.value
     if error occurs, set progress["error"] and break
     """
+    fmt = "{} -> {} -> {}".format
     o = []
     colx = 0
     for x, attr in zip(values, attrs):
@@ -261,71 +237,51 @@ def apply_attrs(values, attrs, custom_attrs, rowx):
 
         colname = xlrd.colname(colx)
         progress["column"] = colname
-        abs_colname = "%s -> %s -> %s" \
-                      % (progress["xls"], progress["sheet"], colname)
+        abs_colname = fmt(progress["xls"], progress["sheet"], colname)
 
         if attr:
             #
             _type = attr.get("type")
             if _type:
-                try:
-                    x = _type(x)
-                except Exception:
-                    progress["error"] = "ERROR TYPE:\n%s" % traceback.format_exc()
-                    break
+                x = _type(x)
             #
             _test = attr.get("test")
             if _test:
-                try:
-                    if not eval(_test):
-                        progress["error"] = "test %r faild: x is %r" \
-                                            % (_test.co_filename, x)
-                        break
-                except Exception:
-                    progress["error"] = "ERROR TEST:\n%s" % traceback.format_exc()
-                    break
+                assert eval(_test)  # use "x" above
             #
-            _uniq = attr.get("uniq")
-            if _uniq:
+            if attr.get("uniq"):
                 uniq_tasks[abs_colname].append(x)
             #
-            _sort = attr.get("sort")
-            if _sort:
+            if attr.get("sort"):
                 sort_tasks[abs_colname].append(x)
             #
             _ref = attr.get("ref")
             if _ref:
-                abs_cellname = "%s -> %s -> %s" \
-                               % (progress["xls"], progress["sheet"],
-                                  xlrd.cellname(rowx, colx))
-                if "/" in _ref:
-                    ref_file_tasks[_ref].append([x, abs_cellname])
-                else:
-                    ref_cell_tasks[_ref].append([x, abs_cellname])
+                abs_cellname = fmt(progress["xls"], progress["sheet"],
+                                   xlrd.cellname(rowx, colx))
+                ref = ref_file_tasks if "/" in _ref else ref_cell_tasks
+                ref[_ref].append([x, abs_cellname])
 
         o.append(x)
         colx += 1
-    else:   # error is broken(break statement), all is well here
-        return o
+
+    return o
 
 
 def combine(keys, attrs, rows_values, custom_attrs):
     """
-    pprint(keys)
-    pprint(attrs)
-    pprint(rows_values)
+    pprint.pprint(keys)
+    pprint.pprint(attrs)
+    pprint.pprint(rows_values)
     """
     o = []
     for rowx, values in enumerate(rows_values, 1):
         progress["row"] = rowx + 1   # human readable
         v = apply_attrs(values, attrs, custom_attrs, rowx)
-        if not v:
-            pprint(progress)
-            break
         #od = collections.OrderedDict(zip(keys, v))
         o.append(dict(zip(keys, v)))
-    else:
-        return o
+    return o
+
 
 def filter_cell_value(type, value, datemode=0):
     if type == xlrd.XL_CELL_NUMBER and value.is_integer():
@@ -338,12 +294,13 @@ def filter_cell_value(type, value, datemode=0):
         value = value.strip()
     return value
 
+
 def parse_sheet(sheet):
     keys, attrs = get_keys_attrs(sheet)
     custom_attrs = get_custom_attrs(sheet)
-    #print(keys)
-    #pprint(attrs)
-    #print(custom_attrs)
+    #pprint.pprint(keys)
+    #pprint.pprint(attrs)
+    #pprint.pprint(custom_attrs)
     rows_values = [
         list(map(filter_cell_value, sheet.row_types(i), sheet.row_values(i)))
         for i in range(1, sheet.nrows)
@@ -370,7 +327,7 @@ def main():
         for j in cfg[i]:
             xls_tasks[cfg[i][j]].append([i, j])
 
-    #pprint(xls_tasks)
+    #pprint.pprint(xls_tasks)
 
     def parse(xls, sheet):
         progress["xls"] = xls
@@ -389,4 +346,10 @@ def main():
     check("..")
 
 if __name__ == "__main__":
-    main()
+    try:
+        main()
+    except Exception:
+        fmt = "{:>10} -> {}".format
+        for k, v in progress.items():
+            print(fmt(k, v))
+        raise
