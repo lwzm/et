@@ -173,14 +173,12 @@ def note_text_to_attr(text):
     test: any python statement
     ...
     """
-    logging.debug("note_text_to_attr({!r}):".format(text))
     attr = {}
     for line in filter(None, (_.strip() for _ in text.split("\n"))):
         token = line.split(":", 1)
         if len(token) != 2:
             continue
         k, v = (_.strip() for _ in token)
-        logging.debug("\t{}: {}".format(k, v))
         if k == "type":
             attr["type"] = eval(v, None, bb_types)
         elif k == "test":
@@ -191,9 +189,6 @@ def note_text_to_attr(text):
             attr["uniq"] = True
         elif k == "sort":
             attr["sort"] = True
-        else:
-            logging.debug("ignore attr {}".format(k))
-    logging.debug(attr)
     return attr
 
 def get_custom_attrs(sheet):
@@ -203,7 +198,13 @@ def get_custom_attrs(sheet):
     cell_note_map = sheet.cell_note_map
     o = {}
     for k, v in cell_note_map.items():
-        o[k] = note_text_to_attr(v.text)
+        if k[0] == 0:  # ignore row 1, already parsed in get_keys_attrs
+            continue
+        txt = v.text
+        out = note_text_to_attr(txt)
+        logging.debug(
+            "note_text_to_attr_{}({!r}) = {}".format(xlrd.cellname(*k), txt, out))
+        o[k] = out
     return o
 
 
@@ -220,13 +221,17 @@ def get_keys_attrs(sheet):
     attrs = []
     cell_note_map = sheet.cell_note_map
     for colx in range(len(keys)):
-        progress["column"] = xlrd.colname(colx)
+        colname = xlrd.colname(colx)
+        progress["column"] = colname
         note = cell_note_map.get((0, colx))
         if note:
-            attrs.append(note_text_to_attr(note.text))
+            txt = note.text
+            out = note_text_to_attr(txt)
+            logging.debug(
+                "note_text_to_attr_{}({!r}) = {}".format(colname, txt, out))
+            attrs.append(out)
         else:
             attrs.append({})
-    logging.debug("get_keys_attrs -> keys:{} attrs:{}".format(keys, attrs))
     return keys, attrs
 
 
@@ -345,6 +350,7 @@ def main():
 
     for k, v in xls_tasks.items():
         for xls, sheet in v:
+            logging.info("parse_sheet <{} {}> to {}".format(xls, sheet, k))
             json_outputs[k].extend(parse(xls, sheet))
 
     for k, v in json_outputs.items():
