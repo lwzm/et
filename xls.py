@@ -50,9 +50,11 @@ json_outputs = ListDefaultDict()
 
 workbooks_mtimes = collections.Counter()
 
+log_level = logging.DEBUG
+log_level = logging.INFO
+
 logging.basicConfig(
-    #level=logging.DEBUG,
-    level=logging.INFO,
+    level=log_level,
     format="%(levelname)s:%(message)s",
     )
 
@@ -171,12 +173,14 @@ def note_text_to_attr(text):
     test: any python statement
     ...
     """
+    logging.debug("note_text_to_attr({!r}):".format(text))
     attr = {}
     for line in filter(None, (_.strip() for _ in text.split("\n"))):
         token = line.split(":", 1)
         if len(token) != 2:
             continue
         k, v = (_.strip() for _ in token)
+        logging.debug("\t{}: {}".format(k, v))
         if k == "type":
             attr["type"] = eval(v, None, bb_types)
         elif k == "test":
@@ -187,6 +191,9 @@ def note_text_to_attr(text):
             attr["uniq"] = True
         elif k == "sort":
             attr["sort"] = True
+        else:
+            logging.debug("ignore attr {}".format(k))
+    logging.debug(attr)
     return attr
 
 def get_custom_attrs(sheet):
@@ -219,6 +226,7 @@ def get_keys_attrs(sheet):
             attrs.append(note_text_to_attr(note.text))
         else:
             attrs.append({})
+    logging.debug("get_keys_attrs -> keys:{} attrs:{}".format(keys, attrs))
     return keys, attrs
 
 
