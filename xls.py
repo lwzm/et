@@ -44,7 +44,6 @@ xls_tasks = ListDefaultDict()
 uniq_tasks = ListDefaultDict()
 sort_tasks = ListDefaultDict()
 ref_file_tasks = ListDefaultDict()
-ref_cell_tasks = ListDefaultDict()
 json_outputs = ListDefaultDict()
 
 
@@ -64,7 +63,6 @@ def check(prefix=""):
     uniq_tasks
     sort_tasks
     ref_file_tasks
-    ref_cell_tasks
     """
     logging.info("check uniq_tasks:")
     for pos, lst in uniq_tasks.items():
@@ -272,8 +270,7 @@ def apply_attrs(values, attrs, custom_attrs, rowx):
             if _ref:
                 abs_cellname = fmt(progress["xls"], progress["sheet"],
                                    xlrd.cellname(rowx, colx))
-                ref = ref_file_tasks if "/" in _ref else ref_cell_tasks
-                ref[_ref].append([x, abs_cellname])
+                ref_file_tasks[_ref].append([x, abs_cellname])
 
         o.append(x)
         colx += 1
@@ -357,7 +354,7 @@ def main():
         with open(os.path.join("output", k), "w") as f:
             f.write(dump_sorted(v))
 
-    check("..")
+    check()
 
 if __name__ == "__main__":
     try:
