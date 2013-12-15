@@ -258,7 +258,7 @@ def apply_attrs(values, attrs, custom_attrs, rowx):
             #
             _test = attr.get("test")
             if _test:
-                assert eval(_test)  # use "x" above
+                assert eval(_test), _test
             #
             if attr.get("uniq"):
                 uniq_tasks[abs_colname].append(x)
