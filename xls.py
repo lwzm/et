@@ -152,6 +152,10 @@ def bb_req(raw):
             compile(req[2], "just test", "eval")
     else:   # L:E[:N]
         compile(n, "just test", "eval")
+        if l == 3:
+            req[2] = int(req[2])
+        else:
+            req.append(1)  # for plan status: (0/1) or (1/1)
     return req
 
 
