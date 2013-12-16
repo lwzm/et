@@ -150,6 +150,8 @@ def bb_req(raw):
         req[1] = int(n)
         if l == 3:
             compile(req[2], "just test", "eval")
+        else:
+            req.append("True")
     else:   # L:E[:N]
         compile(n, "just test", "eval")
         if l == 3:
