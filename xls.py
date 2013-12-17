@@ -84,6 +84,28 @@ def check(prefix=""):
             if f not in fs:
                 logging.warning(pos)
 
+cellname_match = re.compile(r"([A-Z]+)([0-9]+)").match
+
+def cellname_to_index(name, _A2Z="ABCDEFGHIJKLMNOPQRSTUVWXYZ"):
+    """
+    >>> cellname_to_index("A1")
+    (0, 0)
+    >>> cellname_to_index("Z1")
+    (25, 0)
+    >>> cellname_to_index("ZZ1")
+    (701, 0)
+    >>> cellname_to_index("AAA111")
+    (702, 110)
+    """
+    col, row = cellname_match(name).groups()
+    base = len(_A2Z)
+    n = m = 0
+    for i in map(_A2Z.index, col):
+        n = m + i
+        m = (n + 1) * base
+    return n, int(row) - 1
+
+    
 
 def bb_time(raw):
     """use value returned by xldate_as_tuple() directly"""
