@@ -379,7 +379,7 @@ def main():
             json_outputs[k].extend(parse(xls, sheet))
 
     for k, v in json_outputs.items():
-        with open(os.path.join("output", k), "w") as f:
+        with open(os.path.join("tmp", k), "w") as f:
             f.write(dump_sorted(v))
 
     check()
