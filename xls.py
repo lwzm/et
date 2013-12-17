@@ -160,13 +160,14 @@ def bb_mess(raw):
 
     return mess
 
+list_fmt = "[{}]".format
 
 def bb_req(raw):
     """see bb.xls"""
     req = raw.split(":")
     l = len(req)
-    assert req[0][0].isalpha(), "invalid `{}`".format(req[0])
     assert l == 2 or l == 3, "length of {} must be 2 or 3".format(req)
+    req[0] = eval(list_fmt(req[0]), None, eval_env)
     n = req[1].strip()
     if n.isdigit():   # L:N[:R]
         req[1] = int(n)
@@ -185,7 +186,7 @@ def bb_req(raw):
 
 bb_types = {
     # my custom formated list and dict
-    "list": lambda raw: eval("[{}]".format(raw), None, eval_env),
+    "list": lambda raw: eval(list_fmt(raw), None, eval_env),
     "dict": lambda raw: eval("{" + raw + "}", None, eval_env),
     "time": bb_time,
     "mess": bb_mess,
