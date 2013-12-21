@@ -84,7 +84,7 @@ def check(prefix=""):
             if f not in fs:
                 logging.warning(pos)
 
-cellname_match = re.compile(r"([A-Z]+)([0-9]+)").match
+cellname_match = re.compile(r"([A-Z]+)(\d+)").match
 
 def cellname_to_index(name, _A2Z="ABCDEFGHIJKLMNOPQRSTUVWXYZ"):
     """
