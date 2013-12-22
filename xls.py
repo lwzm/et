@@ -349,7 +349,6 @@ def parse_sheet(sheet):
 
 def walk(directory, dir_filter=None, file_filter=None):
     """return a list of all files in this directory, sorted"""
-    import os
     all_files = []
     for root, dirs, files in os.walk(directory):
         dirs[:] = sorted(filter(dir_filter, dirs))
