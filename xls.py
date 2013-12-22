@@ -117,15 +117,14 @@ rc_key_match = re.compile(r"([a-z]+)(\d*)").match
 
 def bb_mess(raw):
     """see bb.xls"""
-    units = filter(None, (_.strip() for _ in raw.split("\n")))
     mess = []   # all
     w0 = []    # for weight things, one `weight loop`, thing
     w1 = []    # for weight things, one `weight loop`, weight
 
-    for u in units:
+    for unit in filter(None, (_.strip() for _ in raw.split("\n"))):
         rw = []
         flush = True
-        keys = list(_.strip() for _ in u.split("#"))
+        keys = list(_.strip() for _ in unit.split("#"))
         l = len(keys)
         assert l == 2 or l == 3, keys
 
