@@ -125,7 +125,7 @@ def bb_mess(raw):
     for i in units:
         rw = []
         flush = True
-        keys = i.split(":")
+        keys = i.split("#")
         assert keys[0][0].isalpha(), keys[0]
 
         i1, i2 = rc_key_match(keys[0]).groups()
@@ -164,7 +164,7 @@ list_fmt = "[{}]".format
 
 def bb_req(raw):
     """see bb.xls"""
-    req = raw.split(":")
+    req = raw.split("#")
     l = len(req)
     assert l == 2 or l == 3, "length of {} must be 2 or 3".format(req)
     n = req[1].strip()
