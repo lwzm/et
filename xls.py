@@ -117,16 +117,17 @@ rc_key_match = re.compile(r"([a-z]+)(\d*)").match
 
 def bb_mess(raw):
     """see bb.xls"""
-    units = raw.split()
+    units = filter(None, (_.strip() for _ in raw.split("\n")))
     mess = []   # all
     w0 = []    # for weight things, one `weight loop`, thing
     w1 = []    # for weight things, one `weight loop`, weight
 
-    for i in units:
+    for u in units:
         rw = []
         flush = True
-        keys = i.split("#")
-        assert keys[0][0].isalpha(), keys[0]
+        keys = list(_.strip() for _ in u.split("#"))
+        l = len(keys)
+        assert l == 2 or l == 3, keys
 
         i1, i2 = rc_key_match(keys[0]).groups()
         i3 = keys[1]
@@ -140,7 +141,7 @@ def bb_mess(raw):
             compile(i3, "just test", "eval")
         rw.append(i3)
 
-        if len(keys) > 2:
+        if l == 3:
             i4 = keys[2]
             if i4[-1] == "%":
                 rw = [rw, float(i4[:-1]) / 100]
@@ -164,9 +165,9 @@ list_fmt = "[{}]".format
 
 def bb_req(raw):
     """see bb.xls"""
-    req = raw.split("#")
+    req = list(_.strip() for _ in raw.split("#"))
     l = len(req)
-    assert l == 2 or l == 3, "length of {} must be 2 or 3".format(req)
+    assert l == 2 or l == 3, req
     n = req[1].strip()
     if n.isdigit():   # L:N[:R]
         if l == 3:
