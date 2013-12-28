@@ -17,11 +17,30 @@ import traceback
 
 import xlrd
 
+class EvalCache(dict):
+    def __missing__(self, k):
+        code = compile(k, k, "eval")
+        self[k] = code
+        return code
+
+_eval_cache = EvalCache()
+_eval = eval
+def eval(source, globals=None, locals=None):
+    """patch built-in function `eval`, this new eval is faster"""
+    return _eval(_eval_cache[source], globals, locals)
+
+
+
 class Default(dict):
     def __missing__(self, key):
         return key
 
 eval_env = Default()
+
+
+names = {}
+S = names.__setitem__  # for eval in `test`
+
 
 dump_sorted = functools.partial(json.dumps, ensure_ascii=False,
                                 separators = (",", ": "),
@@ -128,7 +147,8 @@ def bb_mess(raw):
         l = len(keys)
         assert l == 2 or l == 3, keys
 
-        i1, i2 = rc_key_match(keys[0]).groups()
+        k = keys[0]
+        i1, i2 = rc_key_match(k).groups() if k[0].islower() else eval(k, None, names)
         i3 = keys[1]
 
         rw.append(i1)
@@ -209,7 +229,7 @@ def note_text_to_attr(text):
         if k == "type":
             attr["type"] = eval(v, None, bb_types)
         elif k == "test":
-            attr["test"] = v #compile(v, v, "eval")
+            attr["test"] = v
         elif k == "ref":
             attr["ref"] = v
         elif k == "uniq":
@@ -287,7 +307,7 @@ def apply_attrs(values, attrs, custom_attrs, rowx):
             #
             _test = attr.get("test")
             if _test:
-                assert eval(_test), _test
+                assert eval(_test, None, locals()), _test  # `S` and `o` can be used here
             #
             if attr.get("uniq"):
                 uniq_tasks[abs_colname].append(x)
@@ -383,6 +403,8 @@ def main():
             f.write(dump_sorted(v))
 
     check()
+    #pprint.pprint(names)
+    #pprint.pprint(_eval_cache)
 
 if __name__ == "__main__":
     try:
