@@ -390,7 +390,7 @@ def main():
     def parse(xls, sheet):
         progress["xls"] = xls
         progress["sheet"] = sheet
-        sheet = xlrd.open_workbook(xls).sheet_by_name(sheet)
+        sheet = xlrd.open_workbook("xls/{}".format(xls)).sheet_by_name(sheet)
         return parse_sheet(sheet)
 
     for k, v in xls_tasks.items():
