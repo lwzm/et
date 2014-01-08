@@ -264,6 +264,7 @@ def get_keys_attrs(sheet):
     keys = list(itertools.takewhile(lambda x: isinstance(x, str) and x,
                                     sheet.row_values(0)))
     assert keys, progress
+    assert len(set(keys)) == len(keys), keys
 
     attrs = []
     cell_note_map = sheet.cell_note_map
