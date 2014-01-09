@@ -1,3 +1,4 @@
+{# vim:se syntax=html.tornadotmpl: #}
 {% autoescape None %}
 using System.Collections.Generic;
 namespace Config
@@ -22,8 +23,8 @@ public struct {{ struct }} {
 
 public class GameConfig {
     {% for k, lst in root.items() %}
-    {% set struct, unit, idx_type = "_unit_of_" + k, lst[0], value_type_conv(i[idx_key_map.get(k, "id")] for i in lst) %}
-    public static Dictionary<{{ idx_type }}, {{ struct }}> {{ k }} = new Dictionary<{{ idx_type }}, {{ struct }}>();
+    {% set struct, unit = "_unit_of_" + k, lst[0] %}
+    public static Dictionary<object, {{ struct }}> {{ k }} = new Dictionary<object, {{ struct }}>();
     {% end %}
 
     static GameConfig() {
