@@ -344,8 +344,9 @@ def combine(keys, attrs, rows_values, custom_attrs):
 
 
 def filter_cell_value(type, value, datemode=0):
-    if type == xlrd.XL_CELL_NUMBER and value.is_integer():
-        value = int(value)
+    if type == xlrd.XL_CELL_NUMBER:
+        if value.is_integer():
+            value = int(value)
     elif type == xlrd.XL_CELL_DATE:
         value = xlrd.xldate_as_tuple(value, datemode)
     elif type == xlrd.XL_CELL_BOOLEAN:
