@@ -27,16 +27,27 @@ value_type_names = {
 
 def value_type_conv(vs):
     lst = []
+    values = []
     for v in vs:
         if isinstance(v, list):
             lst.extend(v)
+        elif isinstance(v, dict):
+            lst.extend(v.keys())
+            values.extend(v.values())
         else:
             return value_type_names[type(v)]
 
     se = set(type(i) for i in lst)
     if len(se) != 1:
-        print(lst)
+        logging.warning(lst)
         return "object[]"
+
+    if values:
+        se = set(type(i) for i in values)
+        if len(se) != 1:
+            logging.warning(values)
+            return "xxx"
+        return "Dictionary<object, " + value_type_names[se.pop()] + ">"
 
     return value_type_names[se.pop()] + "[]"
 
@@ -44,6 +55,11 @@ def value_conv(v, t=None):
     out = str(v)
     if isinstance(v, list):
         out = "new int[]{" + ",".join(str(i) for i in v) + "}" #todo
+    elif isinstance(v, dict):
+        out = "new Dictionary<object, int>{" + \
+                ",".join("{%s,%s}" % (value_conv(k), value_conv(v))
+                         for k, v in v.items()) + \
+                "}" #todo
     elif isinstance(v, (str, bool)):
         out = json.dumps(v, ensure_ascii=False)
     return out
