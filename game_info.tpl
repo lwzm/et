@@ -10,7 +10,7 @@ namespace Config
 
 public struct {{ struct }} {
     {% for name, value in unit.items() %}
-    public {{ value_type_conv(i[name] for i in lst) }} {{ name }};
+    public {{ value_type_conv((i[name] for i in lst), (k, name)) }} {{ name }};
     {% end %}
     public {{ struct }}({{ ", ".join("{} _{}".format(value_type_conv(i[k] for i in lst), k) for k, v in unit.items()) }}) {
         {% for name in unit %}
@@ -31,7 +31,7 @@ public class GameConfig {
         {% for k, lst in root.items() %}
         {% set struct, key = "_unit_of_" + k, idx_key_map.get(k, "id") %}
         {% for unit in lst %}
-        {{ k }}.Add({{ json_encode(unit[key]) }}, new {{ struct }}({{ ", ".join(value_conv(v) for v in unit.values()) }}));
+        {{ k }}.Add({{ json_encode(unit[key]) }}, new {{ struct }}({{ ", ".join(value_conv(v, (k, kk)) for kk, v in unit.items()) }}));
         {% end %}
         {% end %}
     }

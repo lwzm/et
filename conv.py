@@ -2,19 +2,12 @@
 # xls
 
 import collections
-import configparser
-import functools
-import itertools
 import json
 import glob
 import logging
-import os
 import pprint
 import re
-import shelve
-import sys
 import time
-import traceback
 
 from tornado import template
 
@@ -25,7 +18,14 @@ value_type_names = {
     bool: "bool",
 }
 
-def value_type_conv(vs):
+value_type_names2 = {}
+
+def detect_common_type(lst):
+    se = set(type(i) for i in lst)
+    assert len(se) == 1, lst
+    return value_type_names[se.pop()]
+
+def value_type_conv(vs, col=None):
     lst = []
     values = []
     for v in vs:
@@ -37,31 +37,31 @@ def value_type_conv(vs):
         else:
             return value_type_names[type(v)]
 
-    se = set(type(i) for i in lst)
-    if len(se) != 1:
-        logging.warning(lst)
-        return "object[]"
-
     if values:
-        se = set(type(i) for i in values)
-        if len(se) != 1:
-            logging.warning(values)
-            return "xxx"
-        return "Dictionary<object, " + value_type_names[se.pop()] + ">"
+        t = detect_common_type(values)
+        if col is not None:
+            value_type_names2[col] = t
+        return "Dictionary<object, {}>".format(t)
 
-    return value_type_names[se.pop()] + "[]"
+    t = detect_common_type(lst)
+    if col is not None:
+        value_type_names2[col] = t
+    return "{}[]".format(t)
 
-def value_conv(v, t=None):
-    out = str(v)
+
+def value_conv(v, col=None):
     if isinstance(v, list):
-        out = "new int[]{" + ",".join(str(i) for i in v) + "}" #todo
+        out = "new {}[]{{{}}}".format(value_type_names2[col],
+                                      ",".join(str(i) for i in v))
     elif isinstance(v, dict):
-        out = "new Dictionary<object, int>{" + \
-                ",".join("{%s,%s}" % (value_conv(k), value_conv(v))
-                         for k, v in v.items()) + \
-                "}" #todo
+        out = "new Dictionary<object, {}>{{{}}}".format(
+            value_type_names2[col],
+            ",".join("{{{},{}}}".format(value_conv(k), value_conv(v))
+                     for k, v in v.items()))
     elif isinstance(v, (str, bool)):
         out = json.dumps(v, ensure_ascii=False)
+    else:
+        out = str(v)
     return out
 
 if __name__ == "__main__":
