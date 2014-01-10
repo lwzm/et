@@ -26,16 +26,19 @@ value_type_names = {
 }
 
 def value_type_conv(vs):
+    lst = []
     for v in vs:
         if isinstance(v, list):
-            if not v:
-                continue
-            v = v[0]
-            return value_type_names[type(v)] + "[]"
+            lst.extend(v)
         else:
             return value_type_names[type(v)]
-    else:
-        return value_type_names[int] + []
+
+    se = set(type(i) for i in lst)
+    if len(se) != 1:
+        print(lst)
+        return "object[]"
+
+    return value_type_names[se.pop()] + "[]"
 
 def value_conv(v, t=None):
     out = str(v)
