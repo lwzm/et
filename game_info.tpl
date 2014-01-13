@@ -1,8 +1,6 @@
 {# vim:se syntax=html.tornadotmpl: #}
 {% autoescape None %}
 using System.Collections.Generic;
-namespace Config
-{
 
 {% for k, lst in root.items() %}
 
@@ -38,4 +36,3 @@ public class GameConfig {
 }
 
 
-}
