@@ -14,7 +14,7 @@ from tornado import template
 value_type_names = {
     int: "int",
     str: "string",
-    float: "double",
+    float: "float",
     bool: "bool",
 }
 
@@ -58,8 +58,12 @@ def value_conv(v, col=None):
             value_type_names2[col],
             ",".join("{{{},{}}}".format(value_conv(k), value_conv(v))
                      for k, v in v.items()))
-    elif isinstance(v, (str, bool)):
-        out = json.dumps(v, ensure_ascii=False)
+    elif isinstance(v, str):
+        out = json.dumps(v)
+    elif isinstance(v, bool):
+        out = str(v).lower()
+    elif isinstance(v, float):
+        out = "{}f".format(v)
     else:
         out = str(v)
     return out
