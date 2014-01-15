@@ -27,6 +27,7 @@ def detect_common_type(lst):
 
 def value_type_conv(vs, col=None):
     lst = []
+    is_dict = False
     values = []
     for v in vs:
         if isinstance(v, list):
@@ -34,11 +35,15 @@ def value_type_conv(vs, col=None):
         elif isinstance(v, dict):
             lst.extend(v.keys())
             values.extend(v.values())
+            is_dict = True
         else:
             return value_type_names[type(v)]
 
-    if values:
-        t = detect_common_type(values)
+    if is_dict:
+        if values:
+            t = detect_common_type(values)
+        else:
+            t = value_type_names[float]  # assume is float
         if col is not None:
             value_type_names2[col] = t
         return "Dictionary<object, {}>".format(t)
