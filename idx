@@ -1,7 +1,20 @@
 ;
-[b.xls]
-表一 : a
-表二 : a
+;[b.xls]
+;表一 : a
+;表二 : a
+;
+;[a.xls]
+;测试 : b
 
-[a.xls]
-测试 : b
+[英雄.xls]
+英雄 : heroes
+
+[怪物.xls]
+怪物 : monsters
+
+[技能.xls]
+技能类型1 : skill_type_1
+技能类型2 : skill_type_2
+技能类型3 : skill_type_3
+技能类型4 : skill_type_4
+技能总表 : skills
