@@ -59,7 +59,7 @@ def value_type_conv(vs, col=None):
 def value_conv(v, col=None):
     if isinstance(v, list):
         out = "new {}[]{{{}}}".format(value_type_names2[col],
-                                      ",".join(str(i) for i in v))
+                                      ",".join(value_conv(i) for i in v))
     elif isinstance(v, dict):
         out = "new Dictionary<object, {}>{{{}}}".format(
             #value_type_names2[col],
