@@ -66,7 +66,7 @@ def value_conv(v, col=None):
             "float", # monkey patch, 20140116
             #",".join("{{{},{}}}".format(value_conv(k), value_conv(v))
             ",".join("{{{},{}f}}".format(value_conv(k), float(v)) # monkey patch, 20140116
-                     for k, v in v.items()))
+                     for k, v in sorted(v.items())))
     elif isinstance(v, str):
         out = json.dumps(v)
     elif isinstance(v, bool):
