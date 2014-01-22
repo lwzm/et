@@ -36,19 +36,11 @@ def value_type_conv(vs, col=None):
             lst.extend(v.keys())
             values.extend(v.values())
             is_dict = True
-            for k in v: v[k] = float(v[k]) # monkey patch, 20140116
         else:
             return value_type_names[type(v)]
 
     if is_dict:
-        #if values:
-        #    t = detect_common_type(values)
-        #else:
-        #    t = value_type_names[float]  # assume is float
-        #if col is not None:
-        #    value_type_names2[col] = t
-        t = "float" # monkey patch, 20140116
-        return "Dictionary<object, {}>".format(t)
+        return "Dictionary<object, BuffVO>"
 
     t = detect_common_type(lst)
     if col is not None:
@@ -56,16 +48,18 @@ def value_type_conv(vs, col=None):
     return "{}[]".format(t)
 
 
+def to_BuffVO(v):
+    if not isinstance(v, list):
+        v = [v]
+    return "new BuffVO({})".format(",".join(map(value_conv, map(float, v))))
+
 def value_conv(v, col=None):
     if isinstance(v, list):
         out = "new {}[]{{{}}}".format(value_type_names2[col],
                                       ",".join(value_conv(i) for i in v))
     elif isinstance(v, dict):
-        out = "new Dictionary<object, {}>{{{}}}".format(
-            #value_type_names2[col],
-            "float", # monkey patch, 20140116
-            #",".join("{{{},{}}}".format(value_conv(k), value_conv(v))
-            ",".join("{{{},{}f}}".format(value_conv(k), float(v)) # monkey patch, 20140116
+        out = "new Dictionary<object, BuffVO>{{{}}}".format(
+            ",".join("{{{},{}}}".format(value_conv(k), to_BuffVO(v)) # monkey patch, 20140116
                      for k, v in sorted(v.items())))
     elif isinstance(v, str):
         out = json.dumps(v)

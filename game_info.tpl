@@ -2,6 +2,21 @@
 {% autoescape None %}
 using System.Collections.Generic;
 
+// for buff
+public struct BuffVO
+{
+    public float value;
+    public float percent;
+    public float time;
+    public float delay;
+    public BuffVO(float _value=0, float _percent=0, float _time=0, float _delay=0) {
+        value = _value;
+        percent = _percent;
+        time = _time;
+        delay = _delay;
+    }
+}
+
 {% for k, lst in root.items() %}
 
 {% set struct, unit = "_unit_of_" + k, lst[0] %}
