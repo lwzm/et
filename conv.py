@@ -79,14 +79,30 @@ if __name__ == "__main__":
         #"skills_display": "id",
     }
 
+    ignores = {
+        "hero_strengthen",
+        "hero_strengthen_gold_cost_1",
+        "hero_strengthen_gold_cost_2",
+        "hero_strengthen_gold_cost_3",
+        "hero_strengthen_gold_cost_4",
+    }
+
+    simples = {
+        "hero_strengthen_1": ("level", "gold_cost"),
+        "hero_strengthen_2": ("level", "gold_cost"),
+        "hero_strengthen_3": ("level", "gold_cost"),
+        "hero_strengthen_4": ("level", "gold_cost"),
+    }
+
     with open("game_info.tpl") as f:
         t = template.Template(f.read())
 
     for i in sorted(glob.glob("tmp/*")):
         k = i.partition("/")[2]
-        with open(i) as f:
-            root[k] = [collections.OrderedDict(sorted(_.items()))
-                       for _ in json.load(f)]
+        if k not in ignores and k not in simples:
+            with open(i) as f:
+                root[k] = [collections.OrderedDict(sorted(_.items()))
+                           for _ in json.load(f)]
 
     s = t.generate(
         value_type_conv=value_type_conv,
@@ -96,4 +112,21 @@ if __name__ == "__main__":
     s = re.sub(r"\s+\n", "\n", s)
 
     with open("../s/GameConfig.cs", "w") as f:
+        f.write(s)
+
+
+    from tornado.util import ObjectDict
+    root = ObjectDict()
+    for i in sorted(glob.glob("tmp/*")):
+        k = i.partition("/")[2]
+        with open(i) as f:
+            root[k] = [ObjectDict(_) for _ in json.load(f)]
+
+    with open("b_config.tpl") as f:
+        t = template.Template(f.read())
+
+    s = t.generate(root=root).decode()
+    s = re.sub(r"\s+\n", "\n", s)
+
+    with open("../s/b_config.erl", "w") as f:
         f.write(s)
