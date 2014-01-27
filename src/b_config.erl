@@ -21,6 +21,6 @@ hero_strengthen_gold_cost('end', 'end') -> 'end'.
 
 {% set ignore = {"id", "name", "icon", "asset"} %}
 {% for x in root.heroes %}
-heroes({{ x.id }}) -> { hero, {{", ". join(repr(v) for k, v in sorted(x.items()) if k not in ignore)}} };
+heroes({{ x.id }}) -> { hero_base, {{", ". join(repr(v) for k, v in sorted(x.items()) if k not in ignore)}} };
 {% end %}
 heroes('end') -> 'end'.

@@ -128,8 +128,8 @@ if __name__ == "__main__":
             t = template.Template(f.read())
         s = t.generate(root=root).decode()
         s = re.sub(r"\s+\n", "\n", s)
-        with open("../s/" + name, "w") as f:
+        with open("../s/srv/" + name, "w") as f:
             f.write(s)
 
-    export_b_config("b_config.erl")
-    export_b_config("b_config.hrl")
+    export_b_config("src/b_config.erl")
+    export_b_config("include/b_config.hrl")
