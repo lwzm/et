@@ -94,7 +94,8 @@ if __name__ == "__main__":
         "hero_strengthen_4": ("level", "gold_cost"),
     }
 
-    with open("game_info.tpl") as f:
+    client_file = "GameConfig.cs"
+    with open(client_file) as f:
         t = template.Template(f.read())
 
     for i in sorted(glob.glob("tmp/*")):
@@ -111,7 +112,7 @@ if __name__ == "__main__":
         root=root).decode()
     s = re.sub(r"\s+\n", "\n", s)
 
-    with open("../s/GameConfig.cs", "w") as f:
+    with open("../s/" + client_file, "w") as f:
         f.write(s)
 
 
@@ -122,11 +123,13 @@ if __name__ == "__main__":
         with open(i) as f:
             root[k] = [ObjectDict(_) for _ in json.load(f)]
 
-    with open("b_config.tpl") as f:
-        t = template.Template(f.read())
+    def export_b_config(name):
+        with open(name) as f:
+            t = template.Template(f.read())
+        s = t.generate(root=root).decode()
+        s = re.sub(r"\s+\n", "\n", s)
+        with open("../s/" + name, "w") as f:
+            f.write(s)
 
-    s = t.generate(root=root).decode()
-    s = re.sub(r"\s+\n", "\n", s)
-
-    with open("../s/b_config.erl", "w") as f:
-        f.write(s)
+    export_b_config("b_config.erl")
+    export_b_config("b_config.hrl")
