@@ -74,6 +74,7 @@ def value_conv(v, col=None):
 if __name__ == "__main__":
     root = collections.OrderedDict()
     idx_key_map = {
+        "heroes": "id_lv",
         #"monsters": "id",
         #"skills_result": "id",
         #"skills_display": "id",
@@ -88,10 +89,10 @@ if __name__ == "__main__":
     }
 
     simples = {
-        "hero_strengthen_1": ("level", "gold_cost"),
-        "hero_strengthen_2": ("level", "gold_cost"),
-        "hero_strengthen_3": ("level", "gold_cost"),
-        "hero_strengthen_4": ("level", "gold_cost"),
+        #"hero_strengthen_1": ("level", "gold_cost"),
+        #"hero_strengthen_2": ("level", "gold_cost"),
+        #"hero_strengthen_3": ("level", "gold_cost"),
+        #"hero_strengthen_4": ("level", "gold_cost"),
     }
 
     client_file = "GameConfig.cs"
@@ -104,6 +105,9 @@ if __name__ == "__main__":
             with open(i) as f:
                 root[k] = [collections.OrderedDict(sorted(_.items()))
                            for _ in json.load(f)]
+                if k == "heroes":   # patch heroes
+                    for i in root[k]:
+                        i["id_lv"] = i["id"] * 1000 + i["lv"]
 
     s = t.generate(
         value_type_conv=value_type_conv,
