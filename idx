@@ -6,15 +6,42 @@
 ;[a.xls]
 ;测试 : b
 
+[proto.xls]
+id_name : protobuffs
+
 [英雄.xls]
-英雄 : heroes
+英雄(1星) : heroes
+英雄(2星) : heroes
+英雄(3星) : heroes
+英雄(4星) : heroes
+英雄(5星) : heroes
+强化价格(1星) : hero_strengthen_gold_cost_1
+强化价格(2星) : hero_strengthen_gold_cost_2
+强化价格(3星) : hero_strengthen_gold_cost_3
+强化价格(4星) : hero_strengthen_gold_cost_4
+强化成功率 : hero_strengthen
 
 [怪物.xls]
 怪物 : monsters
 
 [技能.xls]
-技能类型1 : skill_type_1
-技能类型2 : skill_type_2
-技能类型3 : skill_type_3
-技能类型4 : skill_type_4
 技能总表 : skills
+技能类型_1 : skill_type_1
+技能类型_2 : skill_type_2
+技能类型_3 : skill_type_3
+技能类型_4 : skill_type_4
+技能类型_5 : skill_type_5
+技能类型_6 : skill_type_6
+技能类型_8 : skill_type_8
+
+[其他物品.xls]
+杂物 : items
+
+[装备.xls]
+穿戴位置1_武器 : items
+穿戴位置2_防具 : items
+穿戴位置3_辅助 : items
+穿戴位置4_圣物 : items
+
+[装备合成公式.xls]
+合成 : equipment_compound

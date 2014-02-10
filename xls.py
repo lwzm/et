@@ -401,7 +401,7 @@ def main():
 
     for k, v in xls_tasks.items():
         for xls, sheet in v:
-            logging.info("parse_sheet <{} {}> to {}".format(xls, sheet, k))
+            logging.info("parse_sheet  {} - {}  to {}".format(xls, sheet, k))
             json_outputs[k].extend(parse(xls, sheet))
 
     for k, v in json_outputs.items():

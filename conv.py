@@ -136,4 +136,5 @@ if __name__ == "__main__":
             f.write(s)
 
     export_b_config("src/b_config.erl")
+    export_b_config("src/b_proto.erl")
     export_b_config("include/b_config.hrl")
