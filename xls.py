@@ -364,7 +364,7 @@ def parse_sheet(sheet):
     #pprint.pprint(custom_attrs)
     rows_values = []
     for i in range(1, sheet.nrows):
-        if sheet.row_values(i)[0]:
+        if sheet.row_values(i)[0] != "":
             rows_values.append(list(map(filter_cell_value,
                                         sheet.row_types(i),
                                         sheet.row_values(i))))
