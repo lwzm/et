@@ -38,10 +38,17 @@ id_name : protobuffs
 杂物 : items
 
 [装备.xls]
-穿戴位置1_武器 : items
-穿戴位置2_防具 : items
-穿戴位置3_辅助 : items
-穿戴位置4_圣物 : items
+类型1_武器 : items
+类型2_防具 : items
+类型3_辅助 : items
+类型4_圣物 : items
+
+[装备附魔.xls]
+装备提供的经验 : equip_exp_provide
+附魔等级_类型1 : equip_levelup_class1
+附魔等级_类型2 : equip_levelup_class2
+附魔等级_类型3 : equip_levelup_class3
+附魔等级_类型4 : equip_levelup_class4
 
 [装备合成公式.xls]
 合成 : equipment_compound

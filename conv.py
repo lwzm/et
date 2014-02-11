@@ -75,6 +75,11 @@ if __name__ == "__main__":
     root = collections.OrderedDict()
     idx_key_map = {
         "heroes": "id_lv",
+        "equip_exp_provide": "star",
+        "equip_levelup_class1": "lv",
+        "equip_levelup_class2": "lv",
+        "equip_levelup_class3": "lv",
+        "equip_levelup_class4": "lv",
         #"monsters": "id",
         #"skills_result": "id",
         #"skills_display": "id",
@@ -137,5 +142,5 @@ if __name__ == "__main__":
 
     export_b_config("src/b_config.erl")
     export_b_config("src/b_proto.erl")
-    export_b_config("src/message_code.erl")
+    export_b_config("message_code.erl")
     export_b_config("include/b_config.hrl")
