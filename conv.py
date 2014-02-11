@@ -55,7 +55,7 @@ def to_BuffVO(v):
 
 def value_conv(v, col=None):
     if isinstance(v, list):
-        out = "new {}[]{{{}}}".format(value_type_names2[col],
+        out = "new {}[]{{{}}}".format(value_type_names2.get(col, "int"),
                                       ",".join(value_conv(i) for i in v))
     elif isinstance(v, dict):
         out = "new Dictionary<object, BuffVO>{{{}}}".format(
@@ -80,9 +80,6 @@ if __name__ == "__main__":
         "equip_levelup_class2": "lv",
         "equip_levelup_class3": "lv",
         "equip_levelup_class4": "lv",
-        #"monsters": "id",
-        #"skills_result": "id",
-        #"skills_display": "id",
     }
 
     ignores = {
@@ -93,20 +90,13 @@ if __name__ == "__main__":
         "hero_strengthen_gold_cost_4",
     }
 
-    simples = {
-        #"hero_strengthen_1": ("level", "gold_cost"),
-        #"hero_strengthen_2": ("level", "gold_cost"),
-        #"hero_strengthen_3": ("level", "gold_cost"),
-        #"hero_strengthen_4": ("level", "gold_cost"),
-    }
-
     client_file = "GameConfig.cs"
     with open(client_file) as f:
         t = template.Template(f.read())
 
     for i in sorted(glob.glob("tmp/*")):
         k = i.partition("/")[2]
-        if k not in ignores and k not in simples:
+        if k not in ignores:
             with open(i) as f:
                 root[k] = [collections.OrderedDict(sorted(_.items()))
                            for _ in json.load(f)]
