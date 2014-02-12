@@ -8,7 +8,7 @@ using ProtoBuf;
 
 public class ProtoIdNames
 {
-    public static Dictionary<int, ProtoIdName> protoIdNames = new Dictionary<int, ProtoIdName>();
+    public static Dictionary<int, string> protoIdNames = new Dictionary<int, string>();
     static ProtoIdNames() {
     {% for i in protobuffs %}
         protoIdNames.Add({{ i["id"] }}, "network.{{ i["message"] }}");
