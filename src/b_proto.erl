@@ -16,9 +16,9 @@
 {% for i in protobuffs %}
 en(#{{ i.message.lower() }}{}=M) -> <<{{ i.id }}:?INT, (erlang:iolist_to_binary({{ i.module }}_pb:encode_{{ i.message.lower() }}(M)))/binary>>;
 {% end %}
-en(_) -> error.
+en(Other) -> error(Other).
 
 {% for i in protobuffs %}
 de(<<{{ i.id }}:?INT, B/binary>>) -> {{ i.module }}_pb:decode_{{ i.message.lower() }}(B);
 {% end %}
-de(_) -> error.
+de(Other) -> error(Other).
