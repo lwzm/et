@@ -11,7 +11,7 @@ public class ProtoIdNames
     public static Dictionary<int, ProtoIdName> protoIdNames = new Dictionary<int, ProtoIdName>();
     static ProtoIdNames() {
     {% for i in protobuffs %}
-        protoIdNames.Add({{ i["id"] }}, "network.{{ i["message"] }}"));
+        protoIdNames.Add({{ i["id"] }}, "network.{{ i["message"] }}");
     {% end %}
     }
 }

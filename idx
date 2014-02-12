@@ -41,7 +41,8 @@ id_name : protobuffs
 类型1_武器 : items
 类型2_防具 : items
 类型3_辅助 : items
-类型4_圣物 : items
+类型4_鞋子 : items
+类型5_圣物 : items
 
 [装备附魔.xls]
 装备提供的经验 : equip_exp_provide
