@@ -90,10 +90,6 @@ if __name__ == "__main__":
         "hero_strengthen_gold_cost_4",
     }
 
-    client_file = "GameConfig.cs"
-    with open(client_file) as f:
-        t = template.Template(f.read())
-
     for i in sorted(glob.glob("tmp/*")):
         k = i.partition("/")[2]
         if k not in ignores:
@@ -104,15 +100,22 @@ if __name__ == "__main__":
                     for i in root[k]:
                         i["id_lv"] = i["id"] * 1000 + i["lv"]
 
-    s = t.generate(
-        value_type_conv=value_type_conv,
-        value_conv=value_conv,
-        idx_key_map=idx_key_map,
-        root=root).decode()
-    s = re.sub(r"\s+\n", "\n", s)
+    def export_client_file(client_file):
+        with open(client_file) as f:
+            t = template.Template(f.read())
 
-    with open("../s/" + client_file, "w") as f:
-        f.write(s)
+        s = t.generate(
+            value_type_conv=value_type_conv,
+            value_conv=value_conv,
+            idx_key_map=idx_key_map,
+            root=root).decode()
+        s = re.sub(r"\s+\n", "\n", s)
+
+        with open("../s/" + client_file, "w") as f:
+            f.write(s)
+
+    for f in ["GameConfig.cs", "ProtoSerializer.cs"]:
+        export_client_file(f)
 
 
     from tornado.util import ObjectDict
