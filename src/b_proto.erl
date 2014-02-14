@@ -10,7 +10,7 @@
 {% set protobuffs = root.protobuffs %}
 
 {% for hrl in sorted(set(i.module for i in protobuffs)) %}
--include_lib("{{ hrl }}_pb.hrl").
+-include("{{ hrl }}_pb.hrl").
 {% end %}
 
 {% for i in protobuffs %}

@@ -9,9 +9,11 @@ using ProtoBuf;
 public class ProtoIdNames
 {
     public static Dictionary<int, string> protoIdNames = new Dictionary<int, string>();
+    public static Dictionary<string, int> protoNameIds = new Dictionary<string, int>();
     static ProtoIdNames() {
     {% for i in protobuffs %}
         protoIdNames.Add({{ i["id"] }}, "network.{{ i["message"] }}");
+        protoNameIds.Add("{{ i["message"] }}", {{ i["id"] }});
     {% end %}
     }
 }
