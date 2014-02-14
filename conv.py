@@ -81,15 +81,14 @@ if __name__ == "__main__":
         "equip_levelup_class3": "lv",
         "equip_levelup_class4": "lv",
         "equip_levelup_class5": "lv",
+        "hero_strengthen_gold_cost_1": "lv",
+        "hero_strengthen_gold_cost_2": "lv",
+        "hero_strengthen_gold_cost_3": "lv",
+        "hero_strengthen_gold_cost_4": "lv",
+        "hero_strengthen_gold_cost_5": "lv",
     }
 
     ignores = {
-        "hero_strengthen",
-        "hero_strengthen_gold_cost_1",
-        "hero_strengthen_gold_cost_2",
-        "hero_strengthen_gold_cost_3",
-        "hero_strengthen_gold_cost_4",
-        "hero_strengthen_gold_cost_5",
     }
 
     for i in sorted(glob.glob("tmp/*")):
@@ -98,9 +97,12 @@ if __name__ == "__main__":
             with open(i) as f:
                 root[k] = [collections.OrderedDict(sorted(_.items()))
                            for _ in json.load(f)]
-                if k == "heroes":   # patch heroes
+                if k == "heroes":   # patch
                     for i in root[k]:
                         i["id_lv"] = i["id"] * 1000 + i["lv"]
+                if k == "hero_strengthen":
+                    for i in root[k]:
+                        i["id"] = i["main_star"] * 1000 + i["sub_star"]
 
     def export_client_file(client_file):
         with open(client_file) as f:

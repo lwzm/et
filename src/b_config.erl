@@ -15,7 +15,7 @@ get({ hero_strengthen, {{ x.main_star }}, {{ x.sub_star }} }) -> { {{ x.rate }},
 {% if k.startswith(key_head) %}
 {% set i = int(k[len(key_head):]) %}
 {% for x in root[k] %}
-get({ hero_strengthen_gold_cost, {{ i }}, {{ x.level }} }) -> {{ x.gold }};
+get({ hero_strengthen_gold_cost, {{ i }}, {{ x.lv }} }) -> {{ x.gold }};
 {% end %}
 {% end %}
 {% end %}

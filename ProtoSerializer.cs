@@ -6,14 +6,18 @@ using ProtoBuf;
 
 {% set protobuffs = root["protobuffs"] %}
 
+public enum ProtoNameIds {
+{% for i in protobuffs %}
+    {{ i["message"].upper() }} = {{ i["id"] }},
+{% end %}
+}
+
 public class ProtoIdNames
 {
     public static Dictionary<int, string> protoIdNames = new Dictionary<int, string>();
-    public static Dictionary<string, int> protoNameIds = new Dictionary<string, int>();
     static ProtoIdNames() {
     {% for i in protobuffs %}
-        protoIdNames.Add({{ i["id"] }}, "network.{{ i["message"] }}");
-        protoNameIds.Add("{{ i["message"] }}", {{ i["id"] }});
+        protoIdNames.Add(ProtoNameIds.{{ i["message"].upper() }}, "network.{{ i["message"] }}");
     {% end %}
     }
 }
@@ -24,7 +28,7 @@ public class ProtoSerializer
     {
         switch (protoType) {
         {% for i in protobuffs %}
-            case {{ i["id"] }}: return Serializer.Deserialize<network.{{ i["message"] }}>(stream);
+            case ProtoNameIds.{{ i["message"].upper() }}: return Serializer.Deserialize<network.{{ i["message"] }}>(stream);
         {% end %}
             default: break;
         }
@@ -36,7 +40,7 @@ public class ProtoSerializer
         switch (protoType)
         {
         {% for i in protobuffs %}
-            case {{ i["id"] }}: Serializer.Serialize(stream, (network.{{ i["message"] }})proto); break;
+            case ProtoNameIds.{{ i["message"].upper() }}: Serializer.Serialize(stream, (network.{{ i["message"] }})proto); break;
         {% end %}
             default: break;
         }
