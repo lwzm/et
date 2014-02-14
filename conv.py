@@ -22,8 +22,7 @@ value_type_names2 = {}
 
 def detect_common_type(lst):
     se = set(type(i) for i in lst)
-    assert len(se) == 1, lst
-    return value_type_names[se.pop()]
+    return value_type_names[se.pop()] if len(se) == 1 else "int"
 
 def value_type_conv(vs, col=None):
     lst = []
@@ -42,6 +41,7 @@ def value_type_conv(vs, col=None):
     if is_dict:
         return "Dictionary<object, BuffVO>"
 
+    #print(col)
     t = detect_common_type(lst)
     if col is not None:
         value_type_names2[col] = t
@@ -80,6 +80,7 @@ if __name__ == "__main__":
         "equip_levelup_class2": "lv",
         "equip_levelup_class3": "lv",
         "equip_levelup_class4": "lv",
+        "equip_levelup_class5": "lv",
     }
 
     ignores = {
@@ -88,6 +89,7 @@ if __name__ == "__main__":
         "hero_strengthen_gold_cost_2",
         "hero_strengthen_gold_cost_3",
         "hero_strengthen_gold_cost_4",
+        "hero_strengthen_gold_cost_5",
     }
 
     for i in sorted(glob.glob("tmp/*")):
