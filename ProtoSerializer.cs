@@ -14,7 +14,7 @@ public enum ProtoNameIds {
 
 public class ProtoIdNames
 {
-    public static Dictionary<int, string> protoIdNames = new Dictionary<int, string>();
+    public static Dictionary<ProtoNameIds, string> protoIdNames = new Dictionary<ProtoNameIds, string>();
     static ProtoIdNames() {
     {% for i in protobuffs %}
         protoIdNames.Add(ProtoNameIds.{{ i["message"].upper() }}, "network.{{ i["message"] }}");
@@ -24,7 +24,7 @@ public class ProtoIdNames
 
 public class ProtoSerializer
 {
-    public static Object ParseFrom(int protoType, Stream stream)
+    public static Object ParseFrom(ProtoNameIds protoType, Stream stream)
     {
         switch (protoType) {
         {% for i in protobuffs %}
@@ -35,7 +35,7 @@ public class ProtoSerializer
         return null;
     }
 
-    public static void Serialize(int protoType, Stream stream, Object proto)
+    public static void Serialize(ProtoNameIds protoType, Stream stream, Object proto)
     {
         switch (protoType)
         {

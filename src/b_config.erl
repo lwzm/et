@@ -25,4 +25,12 @@ get({ hero_strengthen_gold_cost, {{ i }}, {{ x.lv }} }) -> {{ x.gold }};
 get({ heroes, {{ x.id }}, {{ x.lv }} }) -> { hero_base, {{", ". join(repr(v) for k, v in sorted(x.items()) if k not in ignore)}} };
 {% end %}
 
+{% for i in range(1, 6) %}
+{% for x in root["equip_levelup_class" + str(1)] %}
+{% for star in range(1, x.star + 1) %}
+get({ equip_lv_exp, {{ i }}, {{ star }}, {{ x.lv }} }) -> {{ x.exp }};
+{% end %}
+{% end %}
+{% end %}
+
 get(_) -> "Not Found".

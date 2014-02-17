@@ -37,6 +37,7 @@ id_name : protobuffs
 
 [其他物品.xls]
 杂物 : items
+;宝箱开启(需要钥匙的) : boxes
 
 [装备.xls]
 类型1_武器 : items
