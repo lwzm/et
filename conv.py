@@ -129,10 +129,22 @@ if __name__ == "__main__":
         with open(i) as f:
             root[k] = [ObjectDict(_) for _ in json.load(f)]
 
+    def b_repr_sub(v):
+        if not isinstance(v, list):
+            v = [v, 0]
+        return v[:2]
+
+    def b_repr(v):
+        if isinstance(v, dict):
+            return "[{}]".format(
+                ", ".join("{{{},{}}}".format(
+                    k, b_repr_sub(v)) for k, v in v.items()))
+        return json.dumps(v, ensure_ascii=False)
+
     def export_b_config(name):
         with open(name) as f:
             t = template.Template(f.read())
-        s = t.generate(root=root).decode()
+        s = t.generate(root=root, repr=b_repr).decode()
         s = re.sub(r"\s+\n", "\n", s)
         with open("../s/srv/" + name, "w") as f:
             f.write(s)
@@ -140,4 +152,5 @@ if __name__ == "__main__":
     export_b_config("src/b_config.erl")
     export_b_config("src/b_proto.erl")
     export_b_config("message_code.erl")
+    export_b_config("game.config")
     export_b_config("include/b_config.hrl")

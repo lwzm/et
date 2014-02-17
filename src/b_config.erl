@@ -20,9 +20,12 @@ get({ hero_strengthen_gold_cost, {{ i }}, {{ x.lv }} }) -> {{ x.gold }};
 {% end %}
 {% end %}
 
-{% set ignore = {"id", "name", "icon", "asset", "grow"} %}
 {% for x in root.heroes %}
-get({ heroes, {{ x.id }}, {{ x.lv }} }) -> { hero_base, {{", ". join(repr(v) for k, v in sorted(x.items()) if k not in ignore)}} };
+get({ heroes, {{ x.id }}, {{ x.lv }} }) -> { hero_base, {{", ". join(repr(v) for k, v in sorted(x.items()))}} };
+{% end %}
+
+{% for x in root["items"] %}
+get({ items, {{ x.id }} }) -> { item_base, {{", ". join(repr(v) for k, v in sorted(x.items()))}} };
 {% end %}
 
 {% for i in range(1, 6) %}
