@@ -160,7 +160,9 @@ def bb_mess(raw):
             compile(i3, "just test", "eval")
         rw.append(i3)
 
-        if l == 3:
+        if l == 2:
+            rw = [rw, 1.0]
+        elif l == 3:
             i4 = keys[2]
             if i4[-1] == "%":
                 rw = [rw, float(i4[:-1]) / 100]
