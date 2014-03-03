@@ -1,58 +1,7 @@
 ; vim:se filetype=dosini:
-;[b.xls]
-;表一 : a
-;表二 : a
-;
-;[a.xls]
-;测试 : b
+[b.xls]
+表一 : b
+表二 : b
 
-[proto.xls]
-id_name : protobuffs
-
-[英雄.xls]
-英雄(1星) : heroes
-英雄(2星) : heroes
-英雄(3星) : heroes
-英雄(4星) : heroes
-英雄(5星) : heroes
-强化价格(1星) : hero_strengthen_gold_cost_1
-强化价格(2星) : hero_strengthen_gold_cost_2
-强化价格(3星) : hero_strengthen_gold_cost_3
-强化价格(4星) : hero_strengthen_gold_cost_4
-强化价格(5星) : hero_strengthen_gold_cost_5
-强化成功率 : hero_strengthen
-
-[怪物.xls]
-怪物 : monsters
-
-[技能.xls]
-技能总表 : skills
-技能类型_1 : skill_type_1
-技能类型_2 : skill_type_2
-技能类型_3 : skill_type_3
-技能类型_4 : skill_type_4
-技能类型_5 : skill_type_5
-技能类型_6 : skill_type_6
-技能类型_8 : skill_type_8
-
-[其他物品.xls]
-杂物 : items
-;宝箱开启(需要钥匙的) : boxes
-
-[装备.xls]
-类型1_武器 : items
-类型2_防具 : items
-类型3_辅助 : items
-类型4_鞋子 : items
-类型5_圣物 : items
-
-[装备附魔.xls]
-装备提供的经验 : equip_exp_provide
-附魔等级_类型1 : equip_levelup_class1
-附魔等级_类型2 : equip_levelup_class2
-附魔等级_类型3 : equip_levelup_class3
-附魔等级_类型4 : equip_levelup_class4
-附魔等级_类型5 : equip_levelup_class5
-
-[装备合成公式.xls]
-合成 : equipment_compound
+[a.xls]
+测试 : a

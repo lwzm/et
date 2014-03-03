@@ -35,11 +35,9 @@ class Default(dict):
     def __missing__(self, key):
         return key
 
-eval_env = Default()
+eval_namespace = Default()
 
-
-names = {}
-S = names.__setitem__  # for eval in `test`
+S = eval_namespace.__setitem__  # for eval in `test`
 
 
 dump_sorted = functools.partial(json.dumps, ensure_ascii=False,
@@ -134,53 +132,45 @@ def bb_time(raw):
 
 rc_key_match = re.compile(r"([a-z]+)(\d*)").match
 
+
 def bb_mess(raw):
     """see bb.xls"""
     mess = []   # all
     w0 = []    # for weight things, one `weight loop`, thing
     w1 = []    # for weight things, one `weight loop`, weight
 
+    def flush():
+        if w0 and w1:
+            mess.append([w0[:], w1[:]])
+            del w0[:], w1[:]
+
     for unit in filter(None, (_.strip() for _ in raw.split("\n"))):
-        rw = []
-        flush = True
-        keys = list(_.strip() for _ in unit.split("#"))
-        l = len(keys)
-        assert l == 2 or l == 3, keys
+        keys = ([_.strip() for _ in unit.split("#")] + ["100%"])[:3]
+        assert len(keys) == 3, unit
 
-        k = keys[0]
-        i1, i2 = rc_key_match(k).groups() if k[0].islower() else eval(k, None, names)
-        i3 = keys[1]
+        term = list(eval(keys[0] + ",", None, eval_namespace))
+        #assert term[0] in {"item", "gold"}, term[0]
+        n = keys[1]
 
-        rw.append(i1)
-        if i2:
-            rw.append(int(i2))
-        if i3.isdigit():
-            i3 = int(i3)
+        if n.isdigit():
+            n = int(n)
         else:
-            compile(i3, "just test", "eval")
-        rw.append(i3)
+            compile(n, "just test", "eval")
+        term.append(n)
 
-        if l == 2:
-            rw = [rw, 1.0]
-        elif l == 3:
-            i4 = keys[2]
-            if i4[-1] == "%":
-                rw = [rw, float(i4[:-1]) / 100]
-            else:
-                w0.append(rw)
-                w1.append(float(i4) if "." in i4 else int(i4))
-                flush = False
-        if flush:
-            if w0 and w1:
-                mess.append([w0[:], w1[:]])
-                del w0[:], w1[:]
-            mess.append(rw)
+        rate = keys[2]
 
-    if w0 and w1:   # flush tail
-        mess.append([w0[:], w1[:]])
-        del w0[:], w1[:]
+        if rate[-1] == "%":
+            mess.append([term, float(rate[:-1]) / 100])
+            flush()
+        else:
+            w0.append(term)
+            w1.append(float(rate))
+
+    flush()  # flush tail
 
     return mess
+
 
 list_fmt = "[{}]".format
 
@@ -198,7 +188,7 @@ def bb_req(raw):
             req.insert(1, "True")
     else:   # L:E[:N]
         compile(n, "just test", "eval")
-        req[0] = eval(list_fmt(req[0]), None, eval_env)  # multi-log-activated
+        req[0] = eval(list_fmt(req[0]), None, eval_namespace)  # multi-log-activated
         if l == 3:
             req[2] = int(req[2])
         else:
@@ -208,8 +198,8 @@ def bb_req(raw):
 
 bb_types = {
     # my custom formated list and dict
-    "list": lambda raw: eval(list_fmt(raw), None, eval_env),
-    "dict": lambda raw: eval("{" + raw + "}", None, eval_env),
+    "list": lambda raw: eval(list_fmt(raw), None, eval_namespace),
+    "dict": lambda raw: eval("{" + raw + "}", None, eval_namespace),
     "time": bb_time,
     "mess": bb_mess,
     "req": bb_req,
@@ -398,7 +388,7 @@ def main():
     def parse(xls, sheet):
         progress["xls"] = xls
         progress["sheet"] = sheet
-        sheet = xlrd.open_workbook("xls/{}".format(xls)).sheet_by_name(sheet)
+        sheet = xlrd.open_workbook(xls).sheet_by_name(sheet)
         return parse_sheet(sheet)
 
     for k, v in xls_tasks.items():
