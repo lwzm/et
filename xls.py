@@ -167,15 +167,16 @@ def bb_req(raw):
     req = list(_.strip() for _ in raw.split("#"))
     l = len(req)
     assert l == 2 or l == 3, req
-    n = req[1].strip()
-    if n.isdigit():   # L:N[:R]
+    x = req[1].strip()
+    if x.isdigit():   # L:N[:R]
         if l == 3:
             compile(req[2], "just test", "eval")
-            req[1], req[2] = req[2], int(n)
+            req[1], req[2] = req[2], int(x)
         else:
             req.insert(1, "True")
+            req[2] = int(req[2])
     else:   # L:E[:N]
-        compile(n, "just test", "eval")
+        compile(x, "just test", "eval")
         req[0] = eval(list_fmt(req[0]), None, eval_namespace)  # multi-log-activated
         if l == 3:
             req[2] = int(req[2])
