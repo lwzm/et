@@ -17,19 +17,6 @@ import traceback
 
 import xlrd
 
-class EvalCache(dict):
-    def __missing__(self, k):
-        code = compile(k, k, "eval")
-        self[k] = code
-        return code
-
-_eval_cache = EvalCache()
-_eval = eval
-def eval(source, globals=None, locals=None):
-    """patch built-in function `eval`, this new eval is faster"""
-    return _eval(_eval_cache[source], globals, locals)
-
-
 
 class Default(dict):
     def __missing__(self, key):
@@ -173,6 +160,7 @@ def bb_mess(raw):
 
 
 list_fmt = "[{}]".format
+dict_fmt = "{{{}}}".format
 
 def bb_req(raw):
     """see bb.xls"""
@@ -199,7 +187,7 @@ def bb_req(raw):
 bb_types = {
     # my custom formated list and dict
     "list": lambda raw: eval(list_fmt(raw), None, eval_namespace),
-    "dict": lambda raw: eval("{" + raw + "}", None, eval_namespace),
+    "dict": lambda raw: eval(dict_fmt(raw), None, eval_namespace),
     "time": bb_time,
     "mess": bb_mess,
     "req": bb_req,
