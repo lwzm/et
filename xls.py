@@ -383,10 +383,10 @@ def main():
     for k, v in xls_tasks.items():
         for xls, sheet in v:
             logging.info("parse_sheet  {} - {}  to {}".format(xls, sheet, k))
-            json_outputs[k].extend(parse(xls, sheet))
+            json_outputs[k].extend(parse(os.path.join("files", xls), sheet))
 
     for k, v in json_outputs.items():
-        with open(os.path.join("tmp", k), "w") as f:
+        with open(os.path.join("jsons", k), "w") as f:
             f.write(dump_sorted(v))
 
     check()
